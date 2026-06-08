@@ -14,7 +14,7 @@ Architecture context is in [ARCHITECTURE.md](ARCHITECTURE.md). The short version
 ## Stage 0 — Back up everything first
 
 1. **Full vendor stack** (file-level, resumable rsync — not a raw `dd` over WiFi): vendor `~/klipper` as a git bundle, `~/printer_data/config`, `~/printer_data/build/*.bin`, and the per-chip build configs `~/klipper/.config*`.
-2. **Full SWD dump of each MCU you will reflash** — this is the only way to get an *exact* rollback (the mainboard H750 has no vendor `.bin` published anywhere):
+2. **Full SWD dump of each MCU you will reflash** — the surest exact rollback. (The H750's vendor firmware was long unpublished; ST-LINK-flashable vendor recovery images are now available in [asnajder/zero-config](https://github.com/asnajder/zero-config), but taking your own dump is still the safest restore.)
 
    ```bash
    openocd -c "adapter driver cmsis-dap" -c "transport select swd" -c "adapter speed 1000" \
@@ -106,7 +106,7 @@ Run mainline Klipper alongside the vendor install (separate `klippy-env-mainline
 
 - Drop `[z_offset_calibration]` (vendor-only module) → use upstream eddy `METHOD=tap` for contact Z.
 - In `[probe_eddy_current]`: drop `vir_contact_speed` (vendor-only); add `max_sensor_hz` (mainline warns otherwise); `z_offset` still works (mainline maps it to `descend_z`).
-- **The eddy LDC1612 must move to software I2C on mainline.** The vendor ran it on hardware `i2c2` (PB10/PB11), but only because the vendor F103 firmware carries heavy STM32F1 hardware-I2C errata workarounds (retry-on-busy, full bus-recovery, and *don't shut down on an F1 I2C error*) that mainline does not have. On mainline, hardware `i2c2` throws `START_NACK` → printer shutdown the moment the probe is used. Switch to bitbang: replace `i2c_bus: i2c2` with `i2c_software_scl_pin: extruder_mcu:PB10` and `i2c_software_sda_pin: extruder_mcu:PB11`. Software I2C sustains both single reads (drive-current cal, Z tap homing) and the rapid_scan bulk FIFO stream — verified end to end.
+- **The eddy LDC1612 must move to software I2C on mainline.** The vendor ran it on hardware `i2c2` (PB10/PB11), but only because the vendor F103 firmware carries heavy STM32F1 hardware-I2C errata workarounds (retry-on-busy, full bus-recovery, and *don't shut down on an F1 I2C error*) that mainline does not have. On mainline, hardware `i2c2` throws `START_NACK` → printer shutdown the moment the probe is used. Switch to bitbang: replace `i2c_bus: i2c2` with `i2c_software_scl_pin: extruder_mcu:PB10` and `i2c_software_sda_pin: extruder_mcu:PB11`. Software I2C sustains both single reads (drive-current cal, Z tap homing) and the rapid_scan bulk FIFO stream — verified end to end, and corroborated independently by [asnajder/zero-config](https://github.com/asnajder/zero-config), which also runs the LDC1612 on software I2C on this board.
 - Add the third-party `gcode_shell_command.py` to `klippy/extras/` (used by the OTA/IP macros).
 - Macros that call `RUN_PROBE_VIR_CONTACT` / `Z_OFFSET_CALIBRATION` (vendor commands) need rewriting to upstream eddy tap. These do not block startup (gcode is validated at call time), only calibration/print flows.
 
@@ -137,6 +137,8 @@ make olddefconfig                     # confirm FLASH_APPLICATION_ADDRESS=0x8020
 make CROSS_PREFIX=arm-none-eabi- CPP=arm-none-eabi-cpp   # -> out/klipper.bin
 ```
 
+There is a second, patch-free way to build this: select `MACH_STM32H743` instead of `MACH_STM32H750`, where the 128 KiB offset is a stock menu option — the mainboard MCU behaves like an H743-class part. [BUILD.md](BUILD.md) covers both routes and a useful startup-GPIO setting (`!PE11,!PB0`) that keeps the aux/exhaust fans from spinning at full power during the boot window.
+
 Before flashing, **gate on the reset vector**: `out/klipper.bin` bytes 4–7 (little-endian) must be in `0x0802xxxx`. A `0x0800xxxx` vector means it was built for the wrong offset and will brick the bridge — abort.
 
 **Build a rollback first.** The same `.config750` + `0x8020000` from the **vendor** source produces a vendor-equivalent firmware (same `chipid.c` → same fake UUID `0d1445047cdd`), flashable through the same Katapult-USB path. That is a *software* rollback that does not need an SWD dump — it covers the "mainline flashed but misbehaves" case (it does not cover an interrupted write that corrupts Katapult itself).
@@ -154,7 +156,7 @@ flash_can.py -d /dev/serial/by-id/usb-katapult_stm32h750xx-* -f out/klipper.bin
 
 After flashing, the H750 comes up with a **new real-hardware UUID** (the fake `0d1445047cdd` is gone, exactly like the F103). Query `canbus_query.py can0`, update `[mcu] canbus_uuid`, restart. Confirm `Loaded MCU 'mcu'` now shows the mainline version (command count jumps, e.g. 122 → 144) and the `deprecated code` warnings are gone.
 
-**This flashes the mainline Klipper *app*, not the bootloader.** The H750 keeps the stock vendor Katapult — the app is written over it. Putting mainline Katapult on the H750 (built with the same 128 KiB H750 support, [Arksine/katapult#177](https://github.com/Arksine/katapult/pull/177)) is a further step that needs SWD on the mainboard; it isn't required to clear the version skew, since that comes from the app. For a true clean-room mainline (zero vendor bytes), the two remaining vendor layers are this H750 Katapult and the OS/eMMC image (the latter needs an eMMC programmer).
+**This flashes the mainline Klipper *app*, not the bootloader.** The H750 keeps the stock vendor Katapult — the app is written over it, which is all the version-skew fix needs (the skew lives in the app). Replacing the bootloader with mainline Katapult is a further, optional step, and it does **not** require SWD: a Katapult *deployer* build is flashed through the stock bootloader over USB/CAN (the same `flash_can.py` path), installs mainline Katapult in place, and you then flash the Klipper app through the freshly-installed mainline Katapult. [asnajder/zero-config](https://github.com/asnajder/zero-config) publishes such a deployer and documents the flow; SWD is only the fallback for a corrupted bootloader. Upstream mainline-Katapult support for this MCU is tracked in [Arksine/katapult#177](https://github.com/Arksine/katapult/pull/177). For a true clean-room mainline (zero vendor bytes) the two remaining vendor layers are this H750 Katapult and the OS/eMMC image — see [OS.md](OS.md).
 
 ## Stage 5 — Recalibrate and verify
 

@@ -46,6 +46,18 @@ bool "128KiB bootloader" if MACH_STM32H743 || MACH_STM32H723 || MACH_STM32F7 || 
 
 (This is what [Klipper3d/klipper#7219](https://github.com/Klipper3d/klipper/pull/7219) carries upstream.)
 
+### Alternative: build the mainboard as an STM32H743 (no patch)
+
+The mainboard MCU behaves like an STM32H743-class part (2 MB-flash behaviour, the app sitting at the 128 KiB offset), so selecting `MACH_STM32H743` instead of `MACH_STM32H750` gives you `0x8020000` from a stock menu option — no Kconfig patch at all. This is the route [asnajder/zero-config](https://github.com/asnajder/zero-config) takes; with `make menuconfig` the relevant settings are:
+
+- processor model **STM32H743**
+- **25 MHz** crystal
+- **128 KiB** application offset (→ `0x8020000`)
+- USB-to-CAN-bus bridge, USB on PA11/PA12, CAN on PB8/PB9
+- **GPIO pins to set at startup: `!PE11,!PB0`**
+
+Either route — H750 plus the one-line patch, or H743 with no patch — yields a working app at `0x8020000`; pick whichever you prefer. The startup-GPIO line is worth keeping in both: `!PE11,!PB0` holds the aux and exhaust fans low until Klipper takes over, instead of letting them run at full power through the boot window.
+
 ## Verify before flashing
 
 Check `out/klipper.bin`'s reset handler — bytes 4–7, little-endian — lands at or above the target offset:
