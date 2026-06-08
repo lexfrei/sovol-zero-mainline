@@ -26,6 +26,8 @@ Architecture context is in [ARCHITECTURE.md](ARCHITECTURE.md). The short version
 
 ## Stage 1 — Build mainline firmware (correct offsets)
 
+Toolchain setup and the host-vs-macOS build differences are in [BUILD.md](BUILD.md).
+
 The single most important fact: **the Katapult bootloader offset is 8 KiB → the Klipper app lives at `0x8002000`, not `0x8000000`.** The vendor `.config` files on disk claim `0x8000000`; that is stale and wrong (it bricks the MCU).
 
 Pin the upstream commit you build from. On macOS, force the cross toolchain for both compile and the linker-script preprocess step:

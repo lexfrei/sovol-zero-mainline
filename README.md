@@ -7,6 +7,7 @@ The printer ships a forked Klipper (host `klippy/` + MCU `src/`) on a BTT CB1 (A
 ## Contents
 
 - **[MIGRATION.md](MIGRATION.md)** — the step-by-step procedure (host + both MCUs).
+- **[BUILD.md](BUILD.md)** — building the firmware on the printer host or on a Mac (toolchain + the macOS CPP quirk).
 - **[PINOUT.md](PINOUT.md)** — toolhead pinout and the SWD header.
 - **[FLASHING.md](FLASHING.md)** — flashing over SWD with a Flipper Zero / DAP Link (verified on the F103 toolhead).
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — the system map: host + three CAN MCUs, pin maps, what is forked vs stock.
