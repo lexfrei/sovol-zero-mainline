@@ -2,7 +2,7 @@
 
 The clean, correct procedure to move a Sovol Zero from the vendor Klipper fork onto upstream Klipper. This is the "do it right the first time" version.
 
-Architecture context is in [ARCHITECTURE.md](ARCHITECTURE.md). The short version: host (BTT CB1 / Allwinner H616) + three CAN STM32 MCUs — `mcu` (STM32H750 mainboard, also the USB-CAN bridge), `extruder_mcu` (STM32F103 toolhead), `hot_mcu` (optional chamber). Only Klipper is forked; everything else (Moonraker, Mainsail, crowsnest, KlipperScreen, Katapult, gs_usb) is stock upstream.
+Architecture context is in [ARCHITECTURE.md](ARCHITECTURE.md). The short version: host (Allwinner H616, on Sovol's all-in-one Zero control board) + three CAN STM32 MCUs — `mcu` (STM32H750 mainboard, also the USB-CAN bridge), `extruder_mcu` (STM32F103 toolhead), `hot_mcu` (optional chamber). Only Klipper is forked; everything else (Moonraker, Mainsail, crowsnest, KlipperScreen, Katapult, gs_usb) is stock upstream.
 
 ## Prerequisites
 

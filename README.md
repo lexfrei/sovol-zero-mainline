@@ -2,7 +2,7 @@
 
 A practical guide for migrating a Sovol Zero off its vendor Klipper fork onto upstream [Klipper](https://github.com/Klipper3d/klipper) — host plus both CAN MCUs, with zero version skew.
 
-The printer ships a forked Klipper (host `klippy/` + MCU `src/`) on a BTT CB1 (Allwinner H616) host, an STM32H750 mainboard that doubles as the USB-CAN bridge, and an STM32F103 toolhead. Everything else in the stack — Moonraker, Mainsail, Katapult, gs_usb, crowsnest, KlipperScreen — is already stock upstream.
+The printer ships a forked Klipper (host `klippy/` + MCU `src/`) on Sovol's all-in-one Zero control board — an Allwinner H616 Linux host plus an STM32H750 that doubles as the USB-CAN bridge — and a separate STM32F103 toolhead. Everything else in the stack — Moonraker, Mainsail, Katapult, gs_usb, crowsnest, KlipperScreen — is already stock upstream.
 
 ## Contents
 

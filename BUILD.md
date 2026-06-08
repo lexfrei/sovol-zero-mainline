@@ -4,7 +4,7 @@ The MCU firmware (Katapult + Klipper) can be built either **on the printer's own
 
 ## Toolchain
 
-### On the printer host (BTT CB1, Debian aarch64)
+### On the printer host (the Sovol Zero board's Allwinner H616, Debian aarch64)
 
 `arm-none-eabi-gcc` is already installed — it's the vendor's own build chain. Clone the sources and build in place; no extra setup, and none of the macOS quirk below:
 
