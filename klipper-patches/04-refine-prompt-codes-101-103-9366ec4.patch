@@ -1,0 +1,72 @@
+From 9366ec44fe24e33a9dd719799a840d8e69e3cb23 Mon Sep 17 00:00:00 2001
+From: zcsw <1130956035@qq.com>
+Date: Wed, 15 Jan 2025 15:03:27 +0800
+Subject: [PATCH] =?UTF-8?q?=E7=BB=86=E5=8C=96=E6=8F=90=E7=A4=BA=E7=A0=8110?=
+ =?UTF-8?q?1=E5=92=8C103?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ klippy/extras/display/menu.cfg | 4 ++--
+ klippy/extras/homing.py        | 4 ++--
+ klippy/kinematics/corexy.py    | 2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/klippy/extras/display/menu.cfg b/klippy/extras/display/menu.cfg
+index 3769e02..dc12b65 100755
+--- a/klippy/extras/display/menu.cfg
++++ b/klippy/extras/display/menu.cfg
+@@ -733,12 +733,12 @@ name: Information
+ 
+ [menu __main __info __version]
+ type: command
+-name: 1.3.4
++name: 1.3.5
+ gcode:
+ 
+ [menu __main __info __time]
+ type: command
+-name: 2025-1-13
++name: 2025-1-15
+ gcode:
+ 
+ [menu __main __info __factory]
+diff --git a/klippy/extras/homing.py b/klippy/extras/homing.py
+index 84021ae..0a71dd9 100644
+--- a/klippy/extras/homing.py
++++ b/klippy/extras/homing.py
+@@ -115,7 +115,7 @@ class HomingMove:
+             if trigger_time > 0.:
+                 trigger_times[name] = trigger_time
+             elif check_triggered and error is None:
+-                self.gcode.run_script_from_command('M117 Tip code: 101')
++                self.gcode.run_script_from_command(f'M117 Tip code: 101 {name}')
+                 error = "No trigger on %s after full movement" % (name,)
+         # Determine stepper halt positions
+         self.toolhead.flush_step_generation()
+@@ -217,7 +217,7 @@ class Homing:
+             hmove = HomingMove(self.printer, endstops)
+             hmove.homing_move(homepos, hi.second_homing_speed)
+             if hmove.check_no_movement() is not None:
+-                self.gcode.run_script_from_command('M117 Tip code: 103')
++                self.gcode.run_script_from_command(f'M117 Tip code: 103 {hmove.check_no_movement()}')
+                 raise self.printer.command_error(
+                     "Endstop %s still triggered after retract"
+                     % (hmove.check_no_movement(),))
+diff --git a/klippy/kinematics/corexy.py b/klippy/kinematics/corexy.py
+index 0fa9272..dd11020 100644
+--- a/klippy/kinematics/corexy.py
++++ b/klippy/kinematics/corexy.py
+@@ -68,7 +68,7 @@ class CoreXYKinematics:
+         self.limits = [(1.0, -1.0)] * 3
+     def _check_endstops(self, move):
+         end_pos = move.end_pos
+-        axis_names = ['X', 'Y', 'Z']
++        axis_names = ['x', 'y', 'z']
+         for i in (0, 1, 2):
+             if (move.axes_d[i]
+                 and (end_pos[i] < self.limits[i][0]
+-- 
+2.30.2
+

@@ -162,4 +162,4 @@ After flashing, the H750 comes up with a **new real-hardware UUID** (the fake `0
 
 ## Optional — screen codes
 
-The vendor firmware shows numeric knob-screen codes (101/103, the 60+ shutdown range). Mainline shows human-readable messages. The numeric codes can be reproduced with a small opt-in Klipper plugin (an output handler plus the shutdown events) if you want them.
+The vendor firmware shows numeric knob-screen codes (101/103, the 60+ shutdown range). Mainline shows human-readable messages. To keep the codes, install the opt-in `klipper-plugin/sovol_codes.py` and add `[sovol_codes]` to `printer.cfg`. See `klipper-plugin/README.md`.

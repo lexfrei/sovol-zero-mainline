@@ -1,0 +1,104 @@
+From 36d4468930787f946bc957921d88a550fd48ddbe Mon Sep 17 00:00:00 2001
+From: Sovol3d <info@sovol3d.com>
+Date: Sat, 29 Mar 2025 11:26:03 +0800
+Subject: [PATCH] =?UTF-8?q?=E4=BF=AE=E5=A4=8D=E6=A0=A1=E5=87=86=E5=87=BA?=
+ =?UTF-8?q?=E7=8E=B0105=20Z=E6=8F=90=E7=A4=BA=E7=A0=81?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ config/printer.cfg                    |  5 ++---
+ klippy/extras/display/menu.cfg        |  4 ++--
+ klippy/extras/z_offset_calibration.py | 22 +++++++++++-----------
+ 3 files changed, 15 insertions(+), 16 deletions(-)
+
+diff --git a/config/printer.cfg b/config/printer.cfg
+index a4c1f34..01b509f 100644
+--- a/config/printer.cfg
++++ b/config/printer.cfg
+@@ -76,9 +76,8 @@ vir_contact_speed: 3.0
+ [z_offset_calibration]
+ non_contact_probe: probe_eddy_current eddy
+ contact_probe: probe_eddy_current eddy
+-center_xy_position: 96,76.2
+-endstop_xy_position: 96,76.2                        
+-z_hop: 5                       
++endstop_xy_position: 76.2,76.2                        
++z_hop: 2                       
+ z_hop_speed: 15
+ internal_endstop_offset: -0.20 
+ 
+diff --git a/klippy/extras/display/menu.cfg b/klippy/extras/display/menu.cfg
+index 9fe4c06..26ad0ff 100755
+--- a/klippy/extras/display/menu.cfg
++++ b/klippy/extras/display/menu.cfg
+@@ -757,12 +757,12 @@ name: Information
+ 
+ [menu __main __info __version]
+ type: command
+-name: 1.3.9
++name: 1.4.0
+ gcode:
+ 
+ [menu __main __info __time]
+ type: command
+-name: 2025-3-28
++name: 2025-3-29
+ gcode:
+ 
+ [menu __main __info __factory]
+diff --git a/klippy/extras/z_offset_calibration.py b/klippy/extras/z_offset_calibration.py
+index 32222be..d648478 100644
+--- a/klippy/extras/z_offset_calibration.py
++++ b/klippy/extras/z_offset_calibration.py
+@@ -11,11 +11,9 @@ class ZoffsetCalibration:
+     def __init__(self, config):
+         self.printer = config.get_printer()
+         self.config = config
+-        x_pos_center, y_pos_center = config.getfloatlist("center_xy_position", count=2)
+         x_pos_endstop, y_pos_endstop = config.getfloatlist("endstop_xy_position", count=2)
+-        self.center_x_pos, self.center_y_pos = x_pos_center, y_pos_center
+         self.endstop_x_pos, self.endstop_y_pos = x_pos_endstop, y_pos_endstop
+-        self.z_hop = config.getfloat("z_hop", default=10.0)
++        self.z_hop = config.getfloat("z_hop", default=2.0)
+         self.z_hop_speed = config.getfloat('z_hop_speed', 5., above=0.)
+         self.zconfig = config.getsection('stepper_z')
+         self.endstop_pin = self.zconfig.get('endstop_pin')
+@@ -78,23 +76,25 @@ class ZoffsetCalibration:
+         # Contact probe calibration
+         gcmd.respond_info("ZoffsetCalibration: Toolhead probing ...")
+         zendstop_p = _contact_probe.run_contact_probe(gcmd)
++        pos = self.toolhead.get_position()
++        pos[2] = z_max_position - self.z_hop
++        self.toolhead.set_position(pos, homing_axes=(0, 1, 2))
+         reprobe_cnt = 1
+         while True:
+-            if(reprobe_cnt >= 6):
++            if(reprobe_cnt >= 10):
+                 self.gcode.run_script_from_command('M117 Tip code: 109')
+-                raise gcmd.error('ZoffsetCalibration: Toolhead probe more than five times.')
++                raise gcmd.error('ZoffsetCalibration: Toolhead probe more than ten times.')
+             ## perform z hop
+             if self.z_hop:
+-                pos = self.toolhead.get_position()
+-                pos[2] += 2
+-                if pos[2] > z_limit_position:
+-                    pos[2] = z_limit_position
++                pos[2] = self.toolhead.get_position()[2] + self.z_hop
++                if pos[2] > z_max_position:
++                    pos[2] = z_max_position
+                 self.toolhead.manual_move([None, None, pos[2]], 5)
+-            gcmd.respond_info("ZoffsetCalibration: Toolhead verifying the difference between before and after %d/5." % (reprobe_cnt))
++            gcmd.respond_info("ZoffsetCalibration: Toolhead verifying the difference between before and after %d/10." % (reprobe_cnt))
+             zendstop_p1 = _contact_probe.run_contact_probe(gcmd)
+             diff_z = abs(zendstop_p1[2] - zendstop_p[2])
+             zendstop_p = zendstop_p1
+-            if diff_z <= 0.03:
++            if diff_z <= 0.0125:
+                 gcmd.respond_info("ZoffsetCalibration: Toolhead check success.")
+                 break
+             reprobe_cnt += 1
+-- 
+2.30.2
+

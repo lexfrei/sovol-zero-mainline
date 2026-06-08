@@ -35,7 +35,7 @@ Notes:
 | crowsnest | `github.com/mainsail-crew/crowsnest.git` | No (stock) | `v4.1.9-1` |
 | moonraker-obico | `github.com/TheSpaghettiDetective/moonraker-obico.git` | No (stock) | `v2.0.9` |
 
-The Klipper fork's history is squashed (no upstream `Kevin O'Connor` authorship survives) — it is an opaque vendor snapshot, not a clean rebase. The vendor delta from import to HEAD is ~715 insertions across host `klippy/` and MCU `src/`.
+The Klipper fork's history is squashed (no upstream `Kevin O'Connor` authorship survives) — it is an opaque vendor snapshot, not a clean rebase. The vendor delta from import to HEAD is ~715 insertions across host `klippy/` and MCU `src/`. See `klipper-patches/README.md` for the provenance analysis and the migration matrix in the repo notes for the per-subsystem upstream-replacement plan.
 
 Running systemd services: `klipper`, `moonraker`, `crowsnest`, `KlipperScreen`, `moonraker-obico`.
 
@@ -98,7 +98,7 @@ Chamber module adds `M141`/`M191` macros (set/wait chamber temp) and a `heater_g
 - `[neopixel Screen_Colour]` — 3 RGB LEDs backlighting the screen (`EXP1_6`).
 - `[output_pin main_led]` — main chamber light (`PD13`).
 - `KlipperScreen.service` runs alongside the LCD.
-- The vendor firmware shows numeric "Tip code" / error codes on this screen (101/103, the 60+ shutdown range). That UI was wired invasively into Klipper core; it can be reproduced as an opt-in Klipper plugin on mainline.
+- The vendor firmware shows numeric "Tip code" / error codes on this screen (101/103, the 60+ shutdown range). That UI was wired invasively into Klipper core; it is reproduced as the opt-in `klipper-plugin/sovol_codes.py` for the upstream migration.
 
 ## Networking and remote access
 
@@ -133,4 +133,4 @@ All under `~/printer_data/config/` (included by `printer.cfg`):
 
 ## Migration summary
 
-Upstream now covers essentially all of the Sovol-specific hardware natively — eddy-current (`probe_eddy_current` scan/tap), load-cell Z (`load_cell_probe`/`hx71x`), LED (`neopixel`), fans (`temperature_fan`/`heater_fan`), both MCU chips (`stm32f1` for the toolhead F103, `stm32h7` for the mainboard H750 — and stock H7 support is newer than the vendor's), and all input shapers. The fork persists mainly because Sovol predated those upstream additions. Migrating is therefore largely **config rewriting + MCU reflashing**, not code porting, plus an optional screen-codes plugin. The only genuinely vendor-only host modules are `z_offset_calibration.py` and `probe_pressure.py` (superseded by upstream `load_cell_probe`).
+Upstream now covers essentially all of the Sovol-specific hardware natively — eddy-current (`probe_eddy_current` scan/tap), load-cell Z (`load_cell_probe`/`hx71x`), LED (`neopixel`), fans (`temperature_fan`/`heater_fan`), both MCU chips (`stm32f1` for the toolhead F103, `stm32h7` for the mainboard H750 — and stock H7 support is newer than the vendor's), and all input shapers. The fork persists mainly because Sovol predated those upstream additions. Migrating is therefore largely **config rewriting + MCU reflashing**, not code porting, plus the `sovol_codes` plugin for the screen UI. The only genuinely vendor-only host modules are `z_offset_calibration.py` and `probe_pressure.py` (superseded by upstream `load_cell_probe`).

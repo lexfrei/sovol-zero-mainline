@@ -9,6 +9,8 @@ The printer ships a forked Klipper (host `klippy/` + MCU `src/`) on a BTT CB1 (A
 - **[MIGRATION.md](MIGRATION.md)** — the step-by-step procedure (host + both MCUs).
 - **[PINOUT.md](PINOUT.md)** — toolhead pinout, the SWD header, and how to flash the F103 with a Flipper Zero / DAP Link.
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — the system map: host + three CAN MCUs, pin maps, what is forked vs stock.
+- **[klipper-plugin/](klipper-plugin/)** — `sovol_codes.py`, an opt-in plugin reproducing the vendor's numeric knob-screen codes on mainline.
+- **[klipper-patches/](klipper-patches/)** — the vendor's Klipper modifications extracted as patches, with a provenance analysis.
 
 ## Key facts
 
@@ -26,7 +28,7 @@ The sibling [Rappetor/Sovol-SV08-Mainline](https://github.com/Rappetor/Sovol-SV0
 
 ## License
 
-[0BSD](LICENSE) — do whatever you want, no attribution required, no warranty.
+[GPLv3](LICENSE). The `klipper-plugin/` and `klipper-patches/` derive from Klipper (itself GPLv3), so the whole repository is under GPLv3 for consistency.
 
 ## Disclaimer
 

@@ -1,0 +1,77 @@
+From 503f61d64bdd62bf194426a6c60be14573e1f77a Mon Sep 17 00:00:00 2001
+From: Sovol3d <info@sovol3d.com>
+Date: Fri, 28 Mar 2025 16:24:48 +0800
+Subject: [PATCH] =?UTF-8?q?=E8=BE=93=E5=85=A5=E6=95=B4=E5=BD=A2=E7=B1=BB?=
+ =?UTF-8?q?=E5=9E=8B=E5=85=A8=E9=83=A8=E5=BC=80=E6=94=BE=EF=BC=8C=E4=BF=AE?=
+ =?UTF-8?q?=E5=A4=8D101=20Py=E6=8A=A5=E9=94=99?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ klippy/extras/display/menu.cfg        | 4 ++--
+ klippy/extras/shaper_calibrate.py     | 3 +--
+ klippy/extras/z_offset_calibration.py | 7 ++++---
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/klippy/extras/display/menu.cfg b/klippy/extras/display/menu.cfg
+index be91164..9fe4c06 100755
+--- a/klippy/extras/display/menu.cfg
++++ b/klippy/extras/display/menu.cfg
+@@ -757,12 +757,12 @@ name: Information
+ 
+ [menu __main __info __version]
+ type: command
+-name: 1.3.7
++name: 1.3.9
+ gcode:
+ 
+ [menu __main __info __time]
+ type: command
+-name: 2025-1-20
++name: 2025-3-28
+ gcode:
+ 
+ [menu __main __info __factory]
+diff --git a/klippy/extras/shaper_calibrate.py b/klippy/extras/shaper_calibrate.py
+index e6e7920..a2c9764 100644
+--- a/klippy/extras/shaper_calibrate.py
++++ b/klippy/extras/shaper_calibrate.py
+@@ -13,8 +13,7 @@ MAX_SHAPER_FREQ = 150.
+ 
+ TEST_DAMPING_RATIOS=[0.075, 0.1, 0.15]
+ 
+-#AUTOTUNE_SHAPERS = ['zv', 'mzv', 'ei', '2hump_ei', '3hump_ei']
+-AUTOTUNE_SHAPERS = ['mzv']
++AUTOTUNE_SHAPERS = ['zv', 'mzv', 'ei', '2hump_ei', '3hump_ei']
+ ######################################################################
+ # Frequency response calculation and shaper auto-tuning
+ ######################################################################
+diff --git a/klippy/extras/z_offset_calibration.py b/klippy/extras/z_offset_calibration.py
+index 14712bf..32222be 100644
+--- a/klippy/extras/z_offset_calibration.py
++++ b/klippy/extras/z_offset_calibration.py
+@@ -68,7 +68,8 @@ class ZoffsetCalibration:
+             gcmd_G28 = self.gcode.create_gcode_command("G28", "G28", {'X': 0, 'Y': 0})
+             phoming.cmd_G28(gcmd_G28)
+         pos = self.toolhead.get_position()
+-        pos[2] = z_max_position
++        z_limit_position = z_max_position + 15
++        pos[2] = z_limit_position
+         self.toolhead.set_position(pos, homing_axes=(0, 1, 2))
+         self.set_z_offset(offset=0.)
+         # Move to probe position
+@@ -86,8 +87,8 @@ class ZoffsetCalibration:
+             if self.z_hop:
+                 pos = self.toolhead.get_position()
+                 pos[2] += 2
+-                if pos[2] > z_max_position:
+-                    pos[2] = z_max_position
++                if pos[2] > z_limit_position:
++                    pos[2] = z_limit_position
+                 self.toolhead.manual_move([None, None, pos[2]], 5)
+             gcmd.respond_info("ZoffsetCalibration: Toolhead verifying the difference between before and after %d/5." % (reprobe_cnt))
+             zendstop_p1 = _contact_probe.run_contact_probe(gcmd)
+-- 
+2.30.2
+
