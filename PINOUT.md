@@ -22,38 +22,6 @@ Transcribed from Sovol's official pin definition (`Motherboard/Extra_Pin_definit
 
 Note: the eddy sensor connector exposes `PB10`/`PB11`. On mainline Klipper drive the LDC1612 over **software I2C** on those pins, not hardware `i2c2` (see MIGRATION.md).
 
-## Flashing the F103 over SWD
+## Flashing
 
-The toolhead Katapult is request-only and can't be recovered over CAN once an app is broken, so an SWD probe is the safety net. Use any CMSIS-DAP probe — an ST-Link V2 clone, or a **Flipper Zero running the DAP Link app**.
-
-Wire the probe to the 4-pin SWD header (silk `5V3 IO CK G`), with the head **disconnected from the printer** — the probe's 3.3 V powers the MCU (a blue LED confirms power):
-
-| Header pin | Signal | Probe |
-| --- | --- | --- |
-| `5V3` | 3.3 V | 3.3 V |
-| `IO` | SWDIO | SWDIO |
-| `CK` | SWCLK | SWCLK |
-| `G` | GND | GND |
-
-### Flipper Zero specifics
-
-- Use the **DAP Link** app — *not* "SWD Probe" (that one only reads, it can't flash). DAP Link presents to the host as a CMSIS-DAP probe (`Combined VCP and CMSIS-DAP Adapter`).
-- Default DAP Link GPIO mapping: SWC (SWCLK) = pin 10, SWD (SWDIO) = pin 12, GND = pin 11, 3V3 = pin 9. Confirm in the app's *Config → Help and Pinout* rather than trusting any single source.
-
-### openocd
-
-```bash
-# sanity: read the chip (expect Cortex-M3, device id 0x...410)
-openocd -c "adapter driver cmsis-dap" -c "transport select swd" -c "adapter speed 1000" \
-  -f target/stm32f1x.cfg -c "init" -c "dap info" -c "shutdown"
-
-# erase + write Katapult (0x08000000) + Klipper (0x08002000) + run
-openocd -c "adapter driver cmsis-dap" -c "transport select swd" -c "adapter speed 1000" \
-  -f target/stm32f1x.cfg -c "init" -c "reset halt" \
-  -c "stm32f1x mass_erase 0" \
-  -c "flash write_image katapult.bin 0x08000000" \
-  -c "flash write_image klipper.bin 0x08002000" \
-  -c "reset run" -c "shutdown"
-```
-
-Always dump the factory firmware first (`dump_image factory.bin 0x08000000 0x10000`) — a valid dump starts with a sane vector table (initial SP in RAM `0x2000xxxx`, reset vector in flash `0x0800xxxx`), and it is the only exact rollback for the toolhead.
+See [FLASHING.md](FLASHING.md) for the SWD procedure (Flipper Zero / DAP Link + openocd) — verified only on the toolhead.

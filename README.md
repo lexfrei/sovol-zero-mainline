@@ -7,7 +7,8 @@ The printer ships a forked Klipper (host `klippy/` + MCU `src/`) on a BTT CB1 (A
 ## Contents
 
 - **[MIGRATION.md](MIGRATION.md)** — the step-by-step procedure (host + both MCUs).
-- **[PINOUT.md](PINOUT.md)** — toolhead pinout, the SWD header, and how to flash the F103 with a Flipper Zero / DAP Link.
+- **[PINOUT.md](PINOUT.md)** — toolhead pinout and the SWD header.
+- **[FLASHING.md](FLASHING.md)** — flashing over SWD with a Flipper Zero / DAP Link (verified on the F103 toolhead).
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — the system map: host + three CAN MCUs, pin maps, what is forked vs stock.
 - **[klipper-plugin/](klipper-plugin/)** — `sovol_codes.py`, an opt-in plugin reproducing the vendor's numeric knob-screen codes on mainline.
 - **[klipper-patches/](klipper-patches/)** — the vendor's Klipper modifications extracted as patches, with a provenance analysis.
@@ -25,6 +26,10 @@ Host + both MCUs run mainline Klipper with zero version skew. For a full clean-r
 ## Credit
 
 The sibling [Rappetor/Sovol-SV08-Mainline](https://github.com/Rappetor/Sovol-SV08-Mainline) project (same H616 + CAN family, different 512 KiB mainboard MCU) was the closest existing reference.
+
+## Contributing
+
+Verified on one printer. Corrections and additions — other probes, the H750 over SWD, other board revisions — are welcome; open a PR.
 
 ## License
 
