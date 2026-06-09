@@ -15,7 +15,7 @@ The on-printer Klipper is a Sovol vendor fork served from their internal Gitea (
 | `03-eddy-calib-z-lift-e88b61c.patch` | `e88b61c` | Adds a Z-axis lift to the eddy-current bed calibration flow | `klippy.py`, `extras/display/menu.cfg` | Vendor flow only |
 | `04-refine-prompt-codes-101-103-9366ec4.patch` | `9366ec4` | Refines the proprietary "101"/"103" prompt codes | `extras/homing.py`, `kinematics/corexy.py`, `extras/display/menu.cfg` | Vendor UI only |
 
-## Are these fixes needed upstream? No.
+## Are these fixes needed upstream? No
 
 Nothing here is a fix that upstream Klipper is missing:
 

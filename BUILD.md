@@ -39,7 +39,7 @@ Pin an upstream commit. For each MCU, seed `.config` from the vendor's on-disk o
 
 The H750 needs a **one-line Kconfig patch** — `STM32_FLASH_START_20000` exists upstream but isn't menu-enabled for the H750:
 
-```
+```text
 # src/stm32/Kconfig, the STM32_FLASH_START_20000 bool:
 bool "128KiB bootloader" if MACH_STM32H743 || MACH_STM32H723 || MACH_STM32F7 || MACH_STM32H750
 ```
