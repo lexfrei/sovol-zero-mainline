@@ -14,6 +14,7 @@ The printer ships a forked Klipper (host `klippy/` + MCU `src/`) on Sovol's all-
 - **[FLASHING.md](FLASHING.md)** — flashing over SWD with a Flipper Zero / DAP Link (verified on the F103 toolhead).
 - **[OS.md](OS.md)** — replacing Sovol's stock OS with Armbian Trixie (the last vendor layer, eMMC-level).
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — the system map: host + three CAN MCUs, pin maps, what is forked vs stock.
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — what bites on mainline and how to clear it: eddy NACK / power-cycle, the resonance-test host overrun, accelerometer noise, version-specific eddy options, fan quirks.
 - **[klipper-plugin/](klipper-plugin/)** — `sovol_codes.py`, an opt-in plugin reproducing the vendor's numeric knob-screen codes on mainline.
 - **[klipper-patches/](klipper-patches/)** — the vendor's Klipper modifications extracted as patches, with a provenance analysis.
 
