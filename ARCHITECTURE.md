@@ -22,6 +22,14 @@ Notes:
 - Chip identity is confirmed in `src/stm32/chipid.c`: the mainboard MCU (UUID `0d1445…`) is an STM32H750 (`0x8f` discriminator, built from `.config750`), and the toolhead MCU (UUID `61755f…`) is an STM32F103 (`0x80`, `.config103`/`stm32f103xe`). There are three per-chip build configs on disk (`.config`, `.config103`, `.config750`). Firmware build tags carry the host hostname `SPI-XI`, i.e. the firmware is compiled on the printer itself.
 - Caveat: the vendor `chipid.c` does not read the hardware `UID_BASE`; it synthesises the CAN UUID from a hardcoded array with a per-chip-family last byte. The CAN UUIDs are therefore baked into the firmware, not unique per silicon — an anti-pattern an upstream migration would revert.
 
+### Why CAN, and why it isn't a choice
+
+The host-to-toolhead link being CAN is dictated by the board wiring, not a Klipper option — it can't be swapped without rewiring the machine:
+
+- The inter-board cable (toolhead ↔ mainboard) is a CANH/CANL differential pair on **PB8/PB9**. On the F103 those pins are CAN_RX/CAN_TX (and the I2C1 remap) — they carry **no USART alternate function at all**, so a UART cannot run on this cable. The F103's three USARTs sit on other pins (USART1 PA9/PA10, USART2 PA2/PA3, USART3 PB10/PB11), and those are already spoken for on this board anyway — PB10/PB11 by the eddy sensor's software I2C, PA9/PA10 by the extruder driver (DIR) and the X-endstop. A UART toolhead on this cable is physically impossible.
+- The F103 has no USB of its own; it reaches the host **only** through the mainboard. So the H750 **must** run in USB-CAN-bridge mode, or the toolhead is unreachable — the bridge is the only topology that makes both MCUs visible.
+- It is also the *right* design: CAN keeps the moving toolhead's umbilical to two signal wires plus power instead of the ~10+ wires a direct (MCU-less) toolhead would drag through a constant flex.
+
 ## Software stack — what is forked
 
 **Only Klipper is forked.** Everything else is stock upstream, merely on older 2024-era versions.
@@ -104,7 +112,7 @@ Chamber module adds `M141`/`M191` macros (set/wait chamber temp) and a `heater_g
 
 - Moonraker on `:7125`, Mainsail (nginx, `server_name _`) on `:80`, Moonraker-Obico for remote access.
 - `trusted_clients` includes the home LAN ranges; `cors_domains` covers `*.lan`, `*.local`, mainsail/fluidd hosts.
-- WiFi: see [the access notes]; the home SSID is WPA2/WPA3-transition and the vendor's old WiFi stack cannot complete SAE, so the NetworkManager profile must be pinned to `wpa-psk`.
+- WiFi: if the SSID is in WPA2/WPA3-transition mode, the vendor's old WiFi stack cannot complete SAE, so the NetworkManager profile must be pinned to `wpa-psk` (`nmcli connection modify <ssid> 802-11-wireless-security.key-mgmt wpa-psk`).
 - **Camera:** `/dev/video0` via crowsnest/ustreamer (`[cam 1]`, 720×540, MJPEG on `:8080`). The camera is mounted upside down — needs a 180° flip via `custom_flags`/`v4l2ctl`.
 
 ## OTA and MCU flashing

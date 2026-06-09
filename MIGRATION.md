@@ -104,8 +104,8 @@ Update `[mcu extruder_mcu] canbus_uuid` in the mainline `printer.cfg` to the new
 
 Run mainline Klipper alongside the vendor install (separate `klippy-env-mainline` venv with the extra `msgspec` dep; mainline klippy.py + the mainline `printer.cfg`). Config translation from the vendor config:
 
-- Drop `[z_offset_calibration]` (vendor-only module) → use upstream eddy `METHOD=tap` for contact Z.
-- In `[probe_eddy_current]`: drop `vir_contact_speed` (vendor-only); add `max_sensor_hz` (mainline warns otherwise); `z_offset` still works (mainline maps it to `descend_z`).
+- Drop `[z_offset_calibration]` (vendor-only module). Upstream eddy provides contact Z via `METHOD=tap` — but **tap is on Klipper master, not yet in a release tag** ([PR #7220](https://github.com/Klipper3d/klipper/pull/7220), merged after the `v0.13.0` tag). On the `v0.13.0` tag, home Z with `[homing_override]` onto the eddy scan endstop (`probe:z_virtual_endstop`) and adopt tap once it ships in a release (or move the whole stack to master).
+- `[probe_eddy_current]` options track the Klipper version, so match them to what you flashed: on the **`v0.13.0` release tag**, `z_offset` is *required* and the tap-era keys `descend_z` / `max_sensor_hz` are *rejected* ("not valid in section"); on **current master**, `descend_z` is the rename of `z_offset` (the old name stays as a deprecated alias) and `max_sensor_hz` is valid. Drop the vendor-only `vir_contact_speed` either way. `reg_drive_current` and the freq→height table come from `LDC_CALIBRATE_DRIVE_CURRENT` + `PROBE_EDDY_CURRENT_CALIBRATE` → `SAVE_CONFIG`, never hand-set.
 - **The eddy LDC1612 must move to software I2C on mainline.** The vendor ran it on hardware `i2c2` (PB10/PB11), but only because the vendor F103 firmware carries heavy STM32F1 hardware-I2C errata workarounds (retry-on-busy, full bus-recovery, and *don't shut down on an F1 I2C error*) that mainline does not have. On mainline, hardware `i2c2` throws `START_NACK` → printer shutdown the moment the probe is used. Switch to bitbang: replace `i2c_bus: i2c2` with `i2c_software_scl_pin: extruder_mcu:PB10` and `i2c_software_sda_pin: extruder_mcu:PB11`. Software I2C sustains both single reads (drive-current cal, Z tap homing) and the rapid_scan bulk FIFO stream — verified end to end, and corroborated independently by [asnajder/zero-config](https://github.com/asnajder/zero-config), which also runs the LDC1612 on software I2C on this board.
 - Add the third-party `gcode_shell_command.py` to `klippy/extras/` (used by the OTA/IP macros).
 - Macros that call `RUN_PROBE_VIR_CONTACT` / `Z_OFFSET_CALIBRATION` (vendor commands) need rewriting to upstream eddy tap. These do not block startup (gcode is validated at call time), only calibration/print flows.
@@ -121,7 +121,7 @@ The mainboard MCU is an STM32H750 that doubles as the USB-CAN bridge. Reflashing
 - **The app lives at `0x8020000`, not `0x8000000`.** That is past the H750's 128 KiB of internal flash. The Sovol Zero mainboard carries additional flash — believed to be a QSPI chip (per the [Klipper #7219](https://github.com/Klipper3d/klipper/pull/7219) discussion, confirmed by multiple Zero owners) — and the stock Katapult places the app there at a 128 KiB offset. What matters in practice: build the app for `0x8020000` and flash it over the stock Katapult. Do **not** use the textbook 32 KiB offset on top of the stock Katapult — it bricks the chip (SWD recovery). And don't trust `.config750` (it says `0x8000000`, stale like `.config103` was).
 - **Mainline already supports this offset** — `STM32_FLASH_START_20000` → `0x8020000` exists upstream; it is just not menu-enabled for the H750. The entire vendor "port" is one line in `src/stm32/Kconfig`:
 
-  ```
+  ```text
   config STM32_FLASH_START_20000
       bool "128KiB bootloader" if MACH_STM32H743 || MACH_STM32H723 || MACH_STM32F7 || MACH_STM32H750
   ```
