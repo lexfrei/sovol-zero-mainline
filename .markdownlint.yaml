@@ -1,0 +1,7 @@
+# markdownlint config for this repo.
+#
+# MD013 (line length) is disabled on purpose: prose is written one continuous
+# line per paragraph and wrapped by the renderer. Hard-wrapping paragraphs
+# would break list and block-quote rendering on narrow viewports, so a fixed
+# column limit does not apply here.
+MD013: false
