@@ -42,7 +42,7 @@ Build all four images from the **same Klipper `master` commit** (and a matching 
 
 ### Mainboard: build as STM32H743 (the validated 400 MHz clock)
 
-Select **`MACH_STM32H743`**, not H750. On current Klipper master both targets offer the `0x8020000` offset (`STM32_FLASH_START_20000`) as a **stock menu option**, so neither needs a patch — but they differ on clock: **H750 defaults to 480 MHz, H743 to 400 MHz**, and 400 MHz is the speed this mainboard is validated at (the vendor and [asnajder/zero-config](https://github.com/asnajder/zero-config) both run it at 400). Building as H743 gives you the proven clock from a stock target. With `make menuconfig`:
+Select **`MACH_STM32H743`**, not H750. On current Klipper master both targets offer the `0x8020000` offset (`STM32_FLASH_START_20000`) as a **stock menu option**, so neither needs a patch — but they differ on clock: **H750 defaults to 480 MHz, H743 to 400 MHz**, and 400 MHz is the speed this mainboard is validated at (the vendor and [asnajder/zero-config](https://github.com/asnajder/zero-config) both run it at 400). Building as H743 gives you the proven clock from a stock target. There's no reason to chase 480 MHz here: Klipper's mainboard workload isn't clock-bound at 400, and 480 MHz on the H750 is silicon-revision-dependent anyway (rev-Y parts cap at 400 MHz and need VOS0 overdrive), so 480 is risk for no gain — 400 is proven and sufficient. With `make menuconfig`:
 
 - processor model **STM32H743**
 - **25 MHz** crystal
