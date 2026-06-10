@@ -118,7 +118,7 @@ Chamber module adds `M141`/`M191` macros (set/wait chamber temp) and a `heater_g
 ## OTA and MCU flashing
 
 - Host OTA: `~/ota_client.sh` (vendor), triggered by the `_OTA` macro.
-- MCU firmware: prebuilt `.bin` files in `~/printer_data/build/` (`mcu_klipper.bin`, `extruder_mcu_klipper.bin`), flashed over CAN with `flash_can.py` by `canbus_uuid` via the bootloader (Katapult/CanBoot-style). Macros `_MCU_UP` / `_EXTRUDER_MCU_UP` / `_EXTRA_MCU_UP` drive the per-MCU update scripts.
+- MCU firmware: prebuilt `.bin` files in `~/printer_data/build/` (`mcu_klipper.bin`, `extruder_mcu_klipper.bin`), flashed over CAN by `canbus_uuid` via the bootloader (Katapult/CanBoot-style) with the vendor's `flash_can.py` (Klipper's CAN-flash helper — distinct from Katapult's `flashtool.py`, which the migration uses). Macros `_MCU_UP` / `_EXTRUDER_MCU_UP` / `_EXTRA_MCU_UP` drive the per-MCU update scripts.
 - Implication for migration: switching to upstream Klipper means building upstream firmware for each MCU's chip and flashing the `.bin` over CAN, in lockstep with the host — the custom CAN command set rules out a host-only swap.
 
 ## Config file map
