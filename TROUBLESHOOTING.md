@@ -14,7 +14,7 @@ The toolhead's Katapult must be built for CAN comms. If it was built (or `olddef
 
 ### Changing Klipper version: flash all three, not just the host
 
-Eddy **tap** (and other features that add MCU-side commands) require the host **and both MCU apps** to be the same Klipper commit. Moving only the host to master while the MCUs stay on a tag fails at startup with e.g. `mcu 'extruder_mcu': Unknown command: trigger_analog_query_state`. Rebuild and flash the app for the host, the F103, and the H750 from the same commit. With a CAN-capable toolhead Katapult this no longer means opening the head — F103 over CAN, H750 over USB-Katapult.
+Eddy **tap** (and other features that add MCU-side commands) require the host **and both MCU apps** to be the same Klipper commit. Moving only the host to master while the MCUs stay on a tag fails at startup with e.g. `mcu 'extruder_mcu': Unknown command: trigger_analog_query_state`. Rebuild and flash the app for the host, the F103, and the mainboard (built as `STM32H743` — see [BUILD.md](BUILD.md)) from the same commit. With a CAN-capable toolhead Katapult this no longer means opening the head — F103 over CAN, the mainboard over USB-Katapult.
 
 ### Don't trust the on-disk `.config` offset
 
@@ -35,7 +35,7 @@ The software-I2C sensor can get into a bad state across a series of soft Klipper
 
 ### Eddy options rejected ("not valid in section")
 
-`descend_z` and `max_sensor_hz` are tap-era keys that exist on Klipper **master**, not on the `v0.13.0` release tag — on the tag, `z_offset` is required instead. Match the config to the Klipper version you flashed (see [MIGRATION.md](MIGRATION.md)).
+You're on the `v0.13.0` tag, not `master`. `descend_z` and `max_sensor_hz` are tap-era keys that only exist on `master`; the tag has no tap and requires `z_offset` instead. This is one of the reasons the guide builds from `master` — if you pinned a tag anyway, match the eddy config to it (see [MIGRATION.md](MIGRATION.md)).
 
 ## Input shaping & accelerometer
 

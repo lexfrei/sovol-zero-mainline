@@ -1,20 +1,20 @@
-# Sovol Zero → mainline Klipper: the happy path
+# Sovol Zero → mainline Klipper: the procedure
 
-The clean, correct procedure to move a Sovol Zero from the vendor Klipper fork onto upstream Klipper. This is the "do it right the first time" version.
+The clean way to put a Sovol Zero fully on upstream Klipper — host plus both MCUs, app *and* bootloader, no vendor bytes in the firmware. Build everything from the **same Klipper `master` commit** (see [Which Klipper version](README.md#which-klipper-version) — `master`, not an old tag, is what gets you eddy tap).
 
 Architecture context is in [ARCHITECTURE.md](ARCHITECTURE.md). The short version: host (Allwinner H616, on Sovol's all-in-one Zero control board) + three CAN STM32 MCUs — `mcu` (STM32H750 mainboard, also the USB-CAN bridge), `extruder_mcu` (STM32F103 toolhead), `hot_mcu` (optional chamber). Only Klipper is forked; everything else (Moonraker, Mainsail, crowsnest, KlipperScreen, Katapult, gs_usb) is stock upstream.
 
 ## Prerequisites
 
-- **An SWD programmer.** ST-Link V2 (~$3 clone) is the community standard. A Flipper Zero running the **DAP Link** app works just as well as a CMSIS-DAP probe (this is what was used here). You need it because the vendor Katapult cannot be recovered over CAN once an app is broken.
-- **ARM toolchain** to build firmware: `brew install --cask gcc-arm-embedded` (macOS) or distro `arm-none-eabi-gcc`.
-- `openocd` ≥ 0.11 for flashing via the programmer.
+- **An SWD programmer.** ST-Link V2 (~$3 clone), or a Flipper Zero running the **DAP Link** app (a CMSIS-DAP probe). It is needed once, to bootstrap the toolhead — the vendor Katapult is request-only and can't be recovered over CAN, so you flash a CAN-capable mainline Katapult onto the toolhead over SWD the first time, and never open the head again.
+- **ARM toolchain** to build firmware: `arm-none-eabi-gcc` (already on the printer host) or `brew install --cask gcc-arm-embedded` on macOS. See [BUILD.md](BUILD.md).
+- `openocd` ≥ 0.11 for the SWD flash.
 - SSH access to the printer.
 
-## Stage 0 — Back up everything first
+## Stage 0 — Back up first
 
-1. **Full vendor stack** (file-level, resumable rsync — not a raw `dd` over WiFi): vendor `~/klipper` as a git bundle, `~/printer_data/config`, `~/printer_data/build/*.bin`, and the per-chip build configs `~/klipper/.config*`.
-2. **Full SWD dump of each MCU you will reflash** — the surest exact rollback. (The H750's vendor firmware was long unpublished; ST-LINK-flashable vendor recovery images are now available in [asnajder/zero-config](https://github.com/asnajder/zero-config), but taking your own dump is still the safest restore.)
+1. **The vendor stack** (file-level, resumable rsync — not a raw `dd` over WiFi): vendor `~/klipper` as a git bundle, `~/printer_data/config`, `~/printer_data/build/*.bin`, and the per-chip build configs `~/klipper/.config*` (they're useful seeds even though their flash offsets are stale).
+2. **An SWD dump of the toolhead** before you erase it — the surest exact rollback:
 
    ```bash
    openocd -c "adapter driver cmsis-dap" -c "transport select swd" -c "adapter speed 1000" \
@@ -22,148 +22,87 @@ Architecture context is in [ARCHITECTURE.md](ARCHITECTURE.md). The short version
      -c "dump_image vendor-f103-FULL-flash.bin 0x08000000 0x10000" -c "shutdown"
    ```
 
-   A valid dump starts with a sane vector table (initial SP in RAM `0x2000xxxx`, reset vector in flash `0x0800xxxx`), not all `0xFF`/`0x00`.
+   A valid dump opens with a sane vector table (initial SP in RAM `0x2000xxxx`, reset vector in flash `0x0800xxxx`), not all `0xFF`/`0x00`. The mainboard's SWD header is buried, so its build-from-source rollback is a vendor-equivalent firmware compiled from your backed-up vendor `~/klipper` at the same `0x8020000` offset (USB-Katapult-flashable). [asnajder/zero-config](https://github.com/asnajder/zero-config) also publishes ST-LINK-flashable vendor recovery images, but as third-party prebuilts of unverifiable provenance they're an emergency fallback only.
 
-## Stage 1 — Build mainline firmware (correct offsets)
+## Stage 1 — Build the firmware (from `master`)
 
-Toolchain setup and the host-vs-macOS build differences are in [BUILD.md](BUILD.md).
+Toolchain and the host-vs-macOS differences are in [BUILD.md](BUILD.md); it also covers the offset table, the per-image output names (each `make` overwrites `out/`, so copy each result to a distinct name), and the reset-vector gate in detail. You build four images, all from the same `master` commit:
 
-The single most important fact: **the Katapult bootloader offset is 8 KiB → the Klipper app lives at `0x8002000`, not `0x8000000`.** The vendor `.config` files on disk claim `0x8000000`; that is stale and wrong (it bricks the MCU).
+| Image | Target | Offset | How it's flashed |
+| --- | --- | --- | --- |
+| Toolhead Katapult | F103, **CANSERIAL** | `0x8000000` | SWD (once) |
+| Toolhead Klipper | F103 | `0x8002000` | SWD (once), then CAN |
+| Mainboard Katapult deployer | **`MACH_STM32H743`** | `0x8020000` | USB-Katapult |
+| Mainboard Klipper | **`MACH_STM32H743`** | `0x8020000` | USB-Katapult |
 
-Pin the upstream commit you build from. On macOS, force the cross toolchain for both compile and the linker-script preprocess step:
+Two things make this clean:
 
-```bash
-# Katapult (F103, 8MHz crystal, CAN PB8/PB9, double-reset entry)
-cd ~/katapult            # git clone https://github.com/Arksine/katapult
-cat > .config <<'EOF'
-CONFIG_MACH_STM32=y
-CONFIG_MACH_STM32F103=y
-CONFIG_STM32_CLOCK_REF_8M=y
-CONFIG_CANBUS=y
-CONFIG_STM32_CANBUS_PB8_PB9=y
-CONFIG_CANBUS_FREQUENCY=1000000
-CONFIG_ENABLE_DOUBLE_RESET=y
-EOF
-make olddefconfig                    # yields FLASH_APPLICATION_ADDRESS=0x8000000, LAUNCH_APP_ADDRESS=0x8002000
-make CROSS_PREFIX=arm-none-eabi- CPP=arm-none-eabi-cpp   # -> out/katapult.bin
+- **Build the mainboard as `MACH_STM32H743`,** not H750. On current master both targets reach the `0x8020000` offset with no patch, but H750 defaults to 480 MHz while H743 defaults to **400 MHz** — the clock this mainboard is validated at. H743 gives you the proven clock from a stock target (see [BUILD.md](BUILD.md)).
+- **Build the toolhead Katapult `CANSERIAL`,** seeding its `.config` from the vendor `.config103` (a bare seed defaults `olddefconfig` to USB, which would be silent on the CAN bus). A CAN-capable Katapult is what lets every future toolhead update flash over CAN with no head-opening.
 
-# Klipper (same F103 chip/clock/CAN, app at 0x8002000)
-cd ~/klipper-mainline    # git clone --depth 1 https://github.com/Klipper3d/klipper
-cp ~/klipper/.config103 .config       # seed from vendor, then fix the offset:
-#   remove CONFIG_STM32_FLASH_START_0000=y ; add CONFIG_STM32_FLASH_START_2000=y
-make olddefconfig                     # confirm FLASH_APPLICATION_ADDRESS=0x8002000
-make CROSS_PREFIX=arm-none-eabi- CPP=arm-none-eabi-cpp   # -> out/klipper.bin
-```
+The mainboard Katapult **deployer** (`BUILD_DEPLOYER=y`, auto-enabled when the app offset differs from the boot offset) is what installs mainline Katapult over USB without SWD. **Gate every image on its reset vector** before flashing: bytes 4–7 (little-endian) must land at the app offset (`0x08002xxx` for the F103, `0x0802xxxx` for the mainboard). A `0x08000xxx` vector means it was built for the wrong offset and will brick the chip — rebuild.
 
-The `CPP=arm-none-eabi-cpp` override is required on macOS (the Makefile defaults to the host `cpp`, which is clang and fails on the linker script).
+## Stage 2 — Flash the toolhead, once, over SWD
 
-## Stage 2 — Flash the toolhead (F103) via SWD
-
-The toolhead board has a 4-pin 2.54 mm SWD header near the F103 (U6), marked **`G CK IO 3.3`**:
-
-| Header | Signal | Programmer |
-| --- | --- | --- |
-| `G` | GND | GND |
-| `CK` | SWCLK (PA14) | SWCLK |
-| `IO` | SWDIO (PA13) | SWDIO |
-| `3.3` | 3.3 V | 3.3 V (powers the MCU) |
-
-Disconnect the head from the printer; the programmer's 3.3 V powers the MCU for flashing (a blue LED on the board confirms power). For a Flipper running DAP Link, SWC=pin 10, SWD=pin 12, GND=pin 11, 3V3=pin 9 (verify in the app's *Config → Help and Pinout*).
-
-Test the link first (read-only), then flash both images and run:
+This is the only time you open the head. It writes the CAN-capable mainline Katapult and the Klipper app; afterwards the toolhead flashes over CAN forever. The header and probe wiring are in [PINOUT.md](PINOUT.md) and [FLASHING.md](FLASHING.md). Disconnect the head; the probe's 3.3 V powers the MCU.
 
 ```bash
-# 1) sanity: read the chip
+# sanity: read the chip (expect Cortex-M3, device id 0x...410)
 openocd -c "adapter driver cmsis-dap" -c "transport select swd" -c "adapter speed 1000" \
-  -f target/stm32f1x.cfg -c "init" -c "dap info" -c "shutdown"   # expect Cortex-M3, device id 0x...410
+  -f target/stm32f1x.cfg -c "init" -c "dap info" -c "shutdown"
 
-# 2) erase + write Katapult + Klipper + run
+# erase + write CANSERIAL Katapult (0x08000000) + Klipper (0x08002000) + run
 openocd -c "adapter driver cmsis-dap" -c "transport select swd" -c "adapter speed 1000" \
   -f target/stm32f1x.cfg -c "init" -c "reset halt" \
   -c "stm32f1x mass_erase 0" \
-  -c "flash write_image katapult.bin 0x08000000" \
-  -c "flash write_image klipper.bin 0x08002000" \
+  -c "flash write_image katapult-f103.bin 0x08000000" \
+  -c "flash write_image klipper-f103.bin 0x08002000" \
   -c "reset run" -c "shutdown"
 ```
 
-Verify it booted: halt and read `pc` — it should be inside the app region (`0x08003xxx`), and the vector tables at `0x08000000` (Katapult) and `0x08002000` (Klipper) should both be valid.
-
-## Stage 3 — Reassemble, find the new UUID, fix config
-
-Reassemble the head, reconnect its CAN, power the printer on.
-
-**The CAN UUID changed.** Upstream Katapult/Klipper read the real hardware UID, so the toolhead no longer answers to the vendor's fake `61755fe321ac`:
+Reassemble the head, reconnect its CAN, power on. The toolhead now answers on a **new real-hardware UUID** (mainline reads the real UID instead of the vendor's fake `61755fe321ac`):
 
 ```bash
 python3 ~/katapult/scripts/flashtool.py -i can0 -q     # note the new UUID
 ```
 
-Update `[mcu extruder_mcu] canbus_uuid` in the mainline `printer.cfg` to the new value.
+## Stage 3 — Flash the mainboard, over USB-Katapult, no SWD
 
-## Stage 4 — Switch the host to mainline
-
-Run mainline Klipper alongside the vendor install (separate `klippy-env-mainline` venv with the extra `msgspec` dep; mainline klippy.py + the mainline `printer.cfg`). Config translation from the vendor config:
-
-- Drop `[z_offset_calibration]` (vendor-only module). Upstream eddy provides contact Z via `METHOD=tap` — but **tap is on Klipper master, not yet in a release tag** ([PR #7220](https://github.com/Klipper3d/klipper/pull/7220), merged after the `v0.13.0` tag). On the `v0.13.0` tag, home Z with `[homing_override]` onto the eddy scan endstop (`probe:z_virtual_endstop`) and adopt tap once it ships in a release (or move the whole stack to master).
-- `[probe_eddy_current]` options track the Klipper version, so match them to what you flashed: on the **`v0.13.0` release tag**, `z_offset` is *required* and the tap-era keys `descend_z` / `max_sensor_hz` are *rejected* ("not valid in section"); on **current master**, `descend_z` is the rename of `z_offset` (the old name stays as a deprecated alias) and `max_sensor_hz` is valid. Drop the vendor-only `vir_contact_speed` either way. `reg_drive_current` and the freq→height table come from `LDC_CALIBRATE_DRIVE_CURRENT` + `PROBE_EDDY_CURRENT_CALIBRATE` → `SAVE_CONFIG`, never hand-set.
-- **The eddy LDC1612 must move to software I2C on mainline.** The vendor ran it on hardware `i2c2` (PB10/PB11), but only because the vendor F103 firmware carries heavy STM32F1 hardware-I2C errata workarounds (retry-on-busy, full bus-recovery, and *don't shut down on an F1 I2C error*) that mainline does not have. On mainline, hardware `i2c2` throws `START_NACK` → printer shutdown the moment the probe is used. Switch to bitbang: replace `i2c_bus: i2c2` with `i2c_software_scl_pin: extruder_mcu:PB10` and `i2c_software_sda_pin: extruder_mcu:PB11`. Software I2C sustains both single reads (drive-current cal, Z tap homing) and the rapid_scan bulk FIFO stream — verified end to end, and corroborated independently by [asnajder/zero-config](https://github.com/asnajder/zero-config), which also runs the LDC1612 on software I2C on this board.
-- Add the third-party `gcode_shell_command.py` to `klippy/extras/` (used by the OTA/IP macros).
-- Macros that call `RUN_PROBE_VIR_CONTACT` / `Z_OFFSET_CALIBRATION` (vendor commands) need rewriting to upstream eddy tap. These do not block startup (gcode is validated at call time), only calibration/print flows.
-
-Point `klipper.service` at the mainline checkout + venv. Reversible: repoint at the vendor `~/klipper`.
-
-The mainline host loads the vendor H750 fine (compatible data dictionary, 122 commands) — but leaving it there is the exact version skew this whole migration exists to kill: a mainline host driving a vendor-fork MCU, three `deprecated code` warnings, and a continued fork dependency on the one component with the least visibility. Finish the job. Stage 4b takes the mainboard to mainline too — it is the highest-risk step, but it is doable entirely over USB, and once it lands the host and all MCUs are on one upstream version with zero skew.
-
-## Stage 4b — H750 mainboard to mainline (over USB-Katapult, no SWD)
-
-The mainboard MCU is an STM32H750 that doubles as the USB-CAN bridge. Reflashing it is the highest-stakes step (brick it and the whole CAN bus dies; the H750 SWD header is on the buried mainboard), but it *is* doable entirely over USB. The only thing that makes it look impossible is the flash layout:
-
-- **The app lives at `0x8020000`, not `0x8000000`.** That is past the H750's 128 KiB of internal flash. The Sovol Zero mainboard carries additional flash — believed to be a QSPI chip (per the [Klipper #7219](https://github.com/Klipper3d/klipper/pull/7219) discussion, confirmed by multiple Zero owners) — and the stock Katapult places the app there at a 128 KiB offset. What matters in practice: build the app for `0x8020000` and flash it over the stock Katapult. Do **not** use the textbook 32 KiB offset on top of the stock Katapult — it bricks the chip (SWD recovery). And don't trust `.config750` (it says `0x8000000`, stale like `.config103` was).
-- **Mainline already supports this offset** — `STM32_FLASH_START_20000` → `0x8020000` exists upstream; it is just not menu-enabled for the H750. The entire vendor "port" is one line in `src/stm32/Kconfig`:
-
-  ```text
-  config STM32_FLASH_START_20000
-      bool "128KiB bootloader" if MACH_STM32H743 || MACH_STM32H723 || MACH_STM32F7 || MACH_STM32H750
-  ```
-
-**Read the real offset from the bootloader itself** — non-destructive, no SWD. Request the bridge into Katapult, connect, read `Application Start`, send `COMPLETE` to boot the app back (the app is untouched; a power-cycle always returns the vendor firmware). The bridge drops for ~30 s. Katapult's `CONNECT` only reads; it does not erase or write.
-
-**Build** (seed from vendor `.config750`, switch the offset symbol):
+The mainboard is the USB-CAN bridge, so it's reachable over USB even though its SWD header is buried. Replace both its bootloader (via the deployer) and its app. (`flashtool.py` is `~/katapult/scripts/flashtool.py` — run these from that directory or put it on `PATH`.)
 
 ```bash
-cp ~/klipper/.config750 .config
-#   remove CONFIG_STM32_FLASH_START_0000=y ; add CONFIG_STM32_FLASH_START_20000=y
-make olddefconfig                     # confirm FLASH_APPLICATION_ADDRESS=0x8020000
-make CROSS_PREFIX=arm-none-eabi- CPP=arm-none-eabi-cpp   # -> out/klipper.bin
+# 1) request the bridge into its (stock) Katapult — it re-enumerates as a USB serial device
+flashtool.py -i can0 -u <mainboard-uuid> -r        # stock vendor Katapult appears under /dev/serial/by-id/ as usb-katapult_stm32h750xx-*
+
+# 2) install mainline Katapult by flashing the deployer through the stock bootloader
+flashtool.py -d /dev/serial/by-id/usb-katapult_stm32h750xx-* -f deployer-mainboard.bin   # re-enumerates h750xx → h743xx = success
+
+# 3) flash the Klipper app through the freshly-installed mainline Katapult
+flashtool.py -d /dev/serial/by-id/usb-katapult_stm32h743xx-* -f klipper-mainboard.bin   # via the new mainline (H743) Katapult
 ```
 
-There is a second, patch-free way to build this: select `MACH_STM32H743` instead of `MACH_STM32H750`, where the 128 KiB offset is a stock menu option — the mainboard MCU behaves like an H743-class part. [BUILD.md](BUILD.md) covers both routes and a useful startup-GPIO setting (`!PE11,!PB0`) that keeps the aux/exhaust fans from spinning at full power during the boot window.
+The USB id reflects the MCU target the *bootloader* was built for, so the change from `h750xx` (stock vendor Katapult) to `h743xx` confirms the mainline (H743) Katapult is now in control — that re-enumeration is your go signal between steps 2 and 3. The bridge's USB re-enumerates during these steps (SSH/flash output may drop, the write still completes). **Don't touch power or USB mid-write** — a clean flash is recoverable through Katapult, but an interrupted write that corrupts Katapult itself is the one case that forces SWD on the buried mainboard. After it boots, the mainboard also comes up on a **new real UUID** (the fake `0d1445047cdd` is gone); `flashtool.py -i can0 -q` to read it.
 
-Before flashing, **gate on the reset vector**: `out/klipper.bin` bytes 4–7 (little-endian) must be in `0x0802xxxx`. A `0x0800xxxx` vector means it was built for the wrong offset and will brick the bridge — abort.
+If you'd rather not bootstrap the toolhead over SWD at all, the same deployer trick can in principle go over CAN through the *working* vendor toolhead app — but the toolhead has no USB and no CAN recovery if that flash corrupts, so SWD-once (Stage 2) is the safe path.
 
-**Build a rollback first.** The same `.config750` + `0x8020000` from the **vendor** source produces a vendor-equivalent firmware (same `chipid.c` → same fake UUID `0d1445047cdd`), flashable through the same Katapult-USB path. That is a *software* rollback that does not need an SWD dump — it covers the "mainline flashed but misbehaves" case (it does not cover an interrupted write that corrupts Katapult itself).
+## Stage 4 — Host and config
 
-**Flash over USB-Katapult** (the vendor's own path — no SWD):
+Point Klipper's host at the same `master` checkout + a venv built from its `requirements.txt`, and set `[update_manager klipper] channel: dev` in `moonraker.conf` so it tracks `master`. Translate the config off the vendor one:
 
-```bash
-# 1) request bootloader: bridge reboots and appears as usb-katapult_stm32h750xx
-flash_can.py -i can0 -u <h750-uuid> -r -f /dev/null
-# 2) flash via that serial device (flasher writes to Katapult's reported 0x8020000)
-flash_can.py -d /dev/serial/by-id/usb-katapult_stm32h750xx-* -f out/klipper.bin
-```
+- **Eddy on software I2C.** The vendor ran the LDC1612 on hardware `i2c2`, but only because its F103 firmware carries STM32F1 hardware-I2C errata workarounds mainline lacks; on mainline hardware `i2c2` throws `START_NACK` → shutdown. Use bitbang: replace `i2c_bus: i2c2` with `i2c_software_scl_pin: extruder_mcu:PB10` and `i2c_software_sda_pin: extruder_mcu:PB11`. Software I2C sustains single reads, tap homing, and the rapid_scan bulk stream — corroborated independently by [asnajder/zero-config](https://github.com/asnajder/zero-config).
+- **Eddy `[probe_eddy_current]` on `master`:** `descend_z` (the rename of the old `z_offset`; the old name stays as a deprecated alias) and `max_sensor_hz`; `reg_drive_current` and the freq→height table are written by calibration (`SAVE_CONFIG`), never hand-set. Drop the vendor-only `vir_contact_speed`, and set `descend_z` to the calibration *approach* height (~0.5 mm) — do **not** carry the vendor's old `z_offset` *value* into it; the real nozzle-to-sensor offset is absorbed into the calibration table. *(If you pin the `v0.13.0` tag instead, those tap-era keys are rejected and `z_offset` is required — another reason to be on `master`.)*
+- **Z homing.** There is no mechanical Z endstop. Use `[homing_override]` (not `[safe_z_home]`): `set_position_z: 0` → a safety z-hop → home X/Y on their mechanical endstops → `G28 Z` onto `probe:z_virtual_endstop`. On `master` you also get **tap** (`PROBE METHOD=tap`) for nozzle-contact Z.
+- **Drop the vendor-only modules.** `[z_offset_calibration]` and macros that call `RUN_PROBE_VIR_CONTACT` / `Z_OFFSET_CALIBRATION` are replaced by upstream eddy/tap; rewrite or remove them. The vendor OTA / IP-display shell macros are cruft — drop them (only add the third-party `gcode_shell_command.py` if you keep a macro that genuinely needs a shell command).
+- Update `[mcu] canbus_uuid` / `[mcu extruder_mcu] canbus_uuid` to the new real UUIDs from Stages 2–3.
 
-**Do not touch power or USB during the write.** Katapult survives a clean app flash (you can re-flash the rollback through it), but an interrupted write corrupts the app with no remote recovery left — that is the one path back to the buried mainboard SWD header.
+Start Klipper and confirm: both MCUs load on the same `master` version (the command counts match, no `is not compatible` / `Unknown command` skew), and `state: ready` (query Moonraker `/printer/info`, not a log grep — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
 
-After flashing, the H750 comes up with a **new real-hardware UUID** (the fake `0d1445047cdd` is gone, exactly like the F103). Query `canbus_query.py can0`, update `[mcu] canbus_uuid`, restart. Confirm `Loaded MCU 'mcu'` now shows the mainline version (command count jumps, e.g. 122 → 144) and the `deprecated code` warnings are gone.
+## Stage 5 — Calibrate and verify
 
-**This flashes the mainline Klipper *app*, not the bootloader.** The H750 keeps the stock vendor Katapult — the app is written over it, which is all the version-skew fix needs (the skew lives in the app). Replacing the bootloader with mainline Katapult is a further, optional step, and it does **not** require SWD: a Katapult *deployer* build is flashed through the stock bootloader over USB/CAN (the same `flash_can.py` path), installs mainline Katapult in place, and you then flash the Klipper app through the freshly-installed mainline Katapult. [asnajder/zero-config](https://github.com/asnajder/zero-config) publishes such a deployer and documents the flow; SWD is only the fallback for a corrupted bootloader. Upstream mainline-Katapult support for this MCU is tracked in [Arksine/katapult#177](https://github.com/Arksine/katapult/pull/177). For a true clean-room mainline (zero vendor bytes) the two remaining vendor layers are this H750 Katapult and the OS/eMMC image — see [OS.md](OS.md).
-
-## Stage 5 — Recalibrate and verify
-
-- `PROBE_EDDY_CURRENT_CALIBRATE`, input shaper (`TEST_RESONANCES` — the LIS2DW chunked-FIFO read in mainline gives a cleaner trace), Z offset via eddy tap.
-- Functional: `G28` homes via eddy, `BED_MESH_CALIBRATE METHOD=rapid_scan` completes, a test print runs.
-- The vendor eddy calibration table (the SAVE_CONFIG block) carries over — mainline reads the same format.
+- `LDC_CALIBRATE_DRIVE_CURRENT` → `PROBE_EDDY_CURRENT_CALIBRATE` (the freq→height table), then `PROBE_EDDY_CURRENT_TAP_CALIBRATE` for `tap_threshold`. `SAVE_CONFIG` after each.
+- Input shaper: `TEST_RESONANCES` — mainline's chunked-FIFO LIS2DW read gives a clean trace, and with a wide `[resonance_tester]` window (not the vendor's pinned 35–45 Hz) the real resonance surfaces. On this host the diagonal test needs the camera stopped — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+- Functional: `G28` homes via eddy, `BED_MESH_CALIBRATE METHOD=rapid_scan` completes, a test print runs. Set `max_accel` to the binding per-axis `SHAPER_CALIBRATE` limit for clean geometry, not the resonance-test ceiling.
 
 ## Optional — screen codes
 
-The vendor firmware shows numeric knob-screen codes (101/103, the 60+ shutdown range). Mainline shows human-readable messages. To keep the codes, install the opt-in `klipper-plugin/sovol_codes.py` and add `[sovol_codes]` to `printer.cfg`. See `klipper-plugin/README.md`.
+The vendor firmware shows numeric knob-screen codes (101/103, the 60+ shutdown range); mainline shows human-readable messages. To keep the codes, install the opt-in `klipper-plugin/sovol_codes.py` and add `[sovol_codes]` to `printer.cfg`. See [klipper-plugin/README.md](klipper-plugin/README.md).
