@@ -4,6 +4,8 @@ The Klipper migration in [MIGRATION.md](MIGRATION.md) leaves Sovol's stock OS im
 
 The canonical, battle-tested walkthrough is [asnajder/zero-config](https://github.com/asnajder/zero-config). This page records the facts that matter and points there for the ordered step-by-step rather than restating it.
 
+If you keep the vendor OS for now (rather than reflashing), one quick de-vendoring step is worth doing: the host ships named **`SPI-XI`** (the manufacturer's company name). Rename it — `sudo hostnamectl set-hostname <name>` — and **also fix `/etc/hosts`**, because `hostnamectl` does not touch it and a leftover `127.0.1.1 SPI-XI` (plus the `::1 … SPI-XI` line) makes `sudo` print `unable to resolve host` on every command. Restart `avahi-daemon` and `moonraker` afterwards (or reboot). A fresh Armbian install below sets its own hostname, so this only applies to the kept vendor OS.
+
 ## The board, the eMMC, and why FEL is off the table
 
 - The host is an **Allwinner H616** soldered onto Sovol's all-in-one control board — not a removable CB1/CM4 module. The **eMMC, though, is a removable module**: it is visible on the board, and Sovol sells a reader for it.
