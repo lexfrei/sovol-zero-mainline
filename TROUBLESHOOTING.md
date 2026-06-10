@@ -59,6 +59,10 @@ A `[printer] max_accel` in the tens of thousands is a *resonance-test* ceiling, 
 
 The vendor config carries a `[fan_generic fan3] pin: PE14` for a board-cooling fan that was **dropped / unpopulated in the production release**. It drives nothing and only clutters the UI — remove the section.
 
+### Hotend fan RPM reads about double
+
+The hotend (heatbreak) fan emits **2 pulses per revolution**, so a `[heater_fan hotend_fan]` configured with `tachometer_ppr: 1` makes Klipper report roughly **twice** the real RPM — an implausible ~16000+ for a small fan. Set **`tachometer_ppr: 2`** and it reports the true ~7800–8400. The fan is fine; only the reading was doubled. (Conversely, a tach fan that reads about *half* of expected is the opposite case — that one really is 1-ppr.)
+
 ## Host / OS
 
 ### Readiness check: query the API, not the log
