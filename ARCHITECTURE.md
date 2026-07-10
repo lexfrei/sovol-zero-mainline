@@ -73,7 +73,7 @@ Two distinct probing systems, both on the toolhead MCU, both feeding `z_offset_c
 - **Contact (load/strain):** the vendor `z_offset_calibration` module uses a single load sensor under the bed to find nozzle-to-bed contact (`internal_endstop_offset: -0.20`). Both `non_contact_probe` and `contact_probe` point at the eddy sensor; the contact path is the vendor's tensometric Z-zero.
 - `Z` homes via `probe:z_virtual_endstop`; `safe_z_home` at `96, 76.2`.
 
-For migration: current upstream covers both natively — `probe_eddy_current` with `METHOD=scan/rapid_scan/tap`, and `load_cell` + `load_cell_probe` + `hx71x` for the contact sensor. The vendor MCU adds custom commands (`ldc1612_setup_home`, `query_ldc1612_home_state`) that have no stock equivalent, so migrating requires reflashing the MCUs from upstream `src/` and rewriting these config sections.
+For migration: current upstream covers the eddy sensor natively — `probe_eddy_current` with `METHOD=scan/rapid_scan/tap`. The under-bed strain gauge does NOT map to upstream `load_cell`/`load_cell_probe`/`hx71x`: its interface is not an ADC stream but a plain GPIO endstop (PD9 tare pulse, PD10 contact trigger), driven by a community config recipe — and late production units do not populate the sensor at all (the mainboard header is a v1.0 leftover), so check for the physical sensor before planning around it. The vendor MCU adds custom commands (`ldc1612_setup_home`, `query_ldc1612_home_state`) that have no stock equivalent, so migrating requires reflashing the MCUs from upstream `src/` and rewriting these config sections.
 
 ## Thermal
 
@@ -113,7 +113,7 @@ Chamber module adds `M141`/`M191` macros (set/wait chamber temp) and a `heater_g
 - Moonraker on `:7125`, Mainsail (nginx, `server_name _`) on `:80`, Moonraker-Obico for remote access.
 - `trusted_clients` includes the home LAN ranges; `cors_domains` covers `*.lan`, `*.local`, mainsail/fluidd hosts.
 - WiFi: if the SSID is in WPA2/WPA3-transition mode, the vendor's old WiFi stack cannot complete SAE, so the NetworkManager profile must be pinned to `wpa-psk` (`nmcli connection modify <ssid> 802-11-wireless-security.key-mgmt wpa-psk`).
-- **Camera:** `/dev/video0` via crowsnest/ustreamer (`[cam 1]`, 720×540, MJPEG on `:8080`). The camera is mounted upside down — needs a 180° flip via `custom_flags`/`v4l2ctl`.
+- **Camera:** `/dev/video0` via crowsnest/ustreamer (`[cam 1]`, 720×540, MJPEG on `:8080`). The camera (MGS1, `364d:6366`) is mounted upside down, and there is no hardware flip: it exposes no v4l2 flip control, ustreamer cannot rotate, and the USB Extension Unit's vendor controls are raw register blobs with no flip toggle — correct it client-side with `rotation: 180` in the Moonraker webcam definition.
 
 ## OTA and MCU flashing
 
@@ -141,4 +141,4 @@ All under `~/printer_data/config/` (included by `printer.cfg`):
 
 ## Migration summary
 
-Upstream now covers essentially all of the Sovol-specific hardware natively — eddy-current (`probe_eddy_current` scan/tap), load-cell Z (`load_cell_probe`/`hx71x`), LED (`neopixel`), fans (`temperature_fan`/`heater_fan`), both MCU chips (`stm32f1` for the toolhead F103, `stm32h7` for the mainboard H750 — and stock H7 support is newer than the vendor's), and all input shapers. The fork persists mainly because Sovol predated those upstream additions. Migrating is therefore largely **config rewriting + MCU reflashing**, not code porting, plus the `sovol_codes` plugin for the screen UI. The only genuinely vendor-only host modules are `z_offset_calibration.py` and `probe_pressure.py` (superseded by upstream `load_cell_probe`).
+Upstream now covers essentially all of the Sovol-specific hardware natively — eddy-current (`probe_eddy_current` scan/tap), load-cell Z (`load_cell_probe`/`hx71x`), LED (`neopixel`), fans (`temperature_fan`/`heater_fan`), both MCU chips (`stm32f1` for the toolhead F103, `stm32h7` for the mainboard H750 — and stock H7 support is newer than the vendor's), and all input shapers. The fork persists mainly because Sovol predated those upstream additions. Migrating is therefore largely **config rewriting + MCU reflashing**, not code porting, plus the `sovol_codes` plugin for the screen UI. The only genuinely vendor-only host modules are `z_offset_calibration.py` and `probe_pressure.py` — and the latter is not superseded by upstream `load_cell_probe`: the strain-gauge interface is a GPIO endstop (see the Z-sensing section above), not an ADC the `hx71x` path could read. On late units the sensor is absent anyway.
