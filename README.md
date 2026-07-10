@@ -19,17 +19,15 @@ The choices in this guide follow from a few principles, in order:
 
 **Build from current Klipper `master`, not a release tag.** Klipper tags rarely (roughly once a year), and the features you actually want here — most importantly eddy-probe **tap** ([PR #7220](https://github.com/Klipper3d/klipper/pull/7220), merged after the last tag) — live on `master`. Tracking `master` (Moonraker's `channel: dev`) is normal Klipper practice; pinning an old tag mainly costs you tap and recent fixes. Whatever commit you pick, build the **host and both MCU apps from the same commit** so the command dictionaries match.
 
-## Contents
+## Contents — by layer
 
-- **[MIGRATION.md](MIGRATION.md)** — the step-by-step procedure (host + both MCUs, from `master`).
-- **[BUILD.md](BUILD.md)** — building the firmware on the printer host or on a Mac (toolchain + the macOS CPP quirk).
-- **[PINOUT.md](PINOUT.md)** — toolhead pinout and the SWD header.
-- **[FLASHING.md](FLASHING.md)** — the one-time SWD flash of the toolhead with a Flipper Zero / DAP Link.
-- **[OS.md](OS.md)** — replacing Sovol's stock OS with vanilla Armbian on the stock 8 GB eMMC (the last vendor layer; includes the one device-tree property that separates this board from a real CB1).
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — the system map: host + three CAN MCUs, pin maps, what is forked vs stock.
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — what bites on mainline and how to clear it: eddy NACK / power-cycle, version-specific eddy options, the resonance-test host overrun, accelerometer noise, flashing all three for tap, fan quirks.
-- **[klipper-plugin/](klipper-plugin/)** — `sovol_codes.py`, an opt-in plugin reproducing the vendor's numeric knob-screen codes on mainline.
-- **[klipper-patches/](klipper-patches/)** — the vendor's Klipper modifications extracted as patches, with a provenance analysis.
+The machine is four independently-replaceable layers — hardware, MCU firmware, OS, application — and every doc here serves one of them. **[BRINGUP.md](BRINGUP.md)** is the map: the layer model, the two bring-up paths (in-place migration vs clean-slate build/recovery), and the backup matrix.
+
+- **Hardware**: **[ARCHITECTURE.md](ARCHITECTURE.md)** — the system map: host + three CAN MCUs, pin maps, what is forked vs stock, and the board's hardware facts (dead ports, absent sensors, camera limits). **[PINOUT.md](PINOUT.md)** — toolhead pinout and the SWD header.
+- **MCU firmware**: **[BUILD.md](BUILD.md)** — building both apps + Katapult from one pinned commit (printer host or Mac). **[FLASHING.md](FLASHING.md)** — the one-time SWD flash of the toolhead with a Flipper Zero / DAP Link.
+- **OS**: **[OS.md](OS.md)** — replacing Sovol's stock OS with vanilla Armbian on the stock 8 GB eMMC (includes the one device-tree property that separates this board from a real CB1).
+- **Application**: **[MIGRATION.md](MIGRATION.md)** — the step-by-step in-place migration (host + both MCUs, from `master`). **[klipper-plugin/](klipper-plugin/)** — `sovol_codes.py`, an opt-in plugin reproducing the vendor's numeric knob-screen codes on mainline. **[klipper-patches/](klipper-patches/)** — the vendor's Klipper modifications extracted as patches, with a provenance analysis.
+- **Cross-cutting**: **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — what bites on mainline and how to clear it: eddy NACK / power-cycle, version-specific eddy options, the resonance-test host overrun, accelerometer noise, flashing all three for tap, fan quirks, update-manager and Obico streaming gotchas.
 
 ## Key facts
 
