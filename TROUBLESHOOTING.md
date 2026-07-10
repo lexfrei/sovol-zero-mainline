@@ -72,3 +72,19 @@ Recent Klipper no longer emits the old `Stats` / `Klipper state: Ready` log line
 ### `apt update` fails on `bullseye-backports`
 
 The `bullseye-backports` suite was removed from the mirrors (404). Comment the active backports line in `/etc/apt/sources.list` (keep a backup) before any apt-based install. Stay within bullseye — a `bullseye→bookworm` dist-upgrade moves Python 3.9→3.11 and breaks the Klipper/Moonraker venvs, with no live rootfs recovery unless you can re-image the eMMC out-of-band (see [OS.md](OS.md)).
+
+## Obico streams at 0.1 FPS
+
+moonraker-obico drops to 0.1 FPS snapshot streaming when it cannot start its bundled Janus — and on this board it never can out of the box. `find_precompiled_dir()` builds the precompiled-variant name from `board_id()`, which returns `NA` on anything that is not a Raspberry Pi or an MKS board, so the resolver looks for `NA.debian.<ver>.64-bit`; the fallback regex requires the same board prefix, so the bundled `rpi.*`/`mks.*` builds are never even considered. A hardware h264 encoder is NOT actually required for a usable stream: once Janus runs, the agent serves MJPEG over a WebRTC data channel at the webcam's real frame rate.
+
+The workaround (until the upstream resolver accepts foreign-board builds): expose the aarch64 MKS build under the name the resolver expects, and give it the two OpenSSL 1.1 libraries it misses on current Debian:
+
+```bash
+cd ~/moonraker-obico/moonraker_obico/bin/janus/precomplied
+ln -s mks.debian.10.64-bit "NA.debian.$(. /etc/os-release; echo $VERSION_ID).64-bit"
+# fetch the libssl1.1 arm64 .deb from the Debian archive, dpkg-deb -x it, and copy
+# libssl.so.1.1 + libcrypto.so.1.1 into mks.debian.10.64-bit/lib/
+# (ldd bin/janus | grep "not found" confirms these are the only two gaps)
+```
+
+Verify: a `janus` process appears under the agent, and the "Webcam is now streaming in 0.1FPS" warning stops showing up in the log. Both added files are untracked in the moonraker-obico checkout — they survive `git pull`, but not a hard reset; re-check them after a major agent update.

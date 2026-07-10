@@ -180,6 +180,7 @@ cat /sys/kernel/debug/mmc1/ios
 ## After first boot
 
 - Mask `systemd-networkd-wait-online.service` — it otherwise stalls boot waiting for the (cable-less) ethernet.
+- Reference cameras by `/dev/v4l/by-id/...`, never by a bare index: kernel 6.18 enumerates the H616's Cedrus VPU as `/dev/video0`, displacing a USB camera to `/dev/video1` — a crowsnest config pointing at the old index dies silently (service active, nothing served on the stream port).
 - Bring CAN up under **`systemd-networkd`**: a `25-can.network` link at 1 Mbit, plus a udev rule setting `tx_queue_len=128` on the `can*` interface.
 - Install the stack with **[KIAUH](https://github.com/dw-0/kiauh)** — Klipper + Moonraker + Mainsail + Crowsnest.
 - The eddy probe needs **`scipy`** in the Klipper venv (and `python3-serial`).
