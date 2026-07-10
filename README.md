@@ -25,7 +25,7 @@ The choices in this guide follow from a few principles, in order:
 - **[BUILD.md](BUILD.md)** — building the firmware on the printer host or on a Mac (toolchain + the macOS CPP quirk).
 - **[PINOUT.md](PINOUT.md)** — toolhead pinout and the SWD header.
 - **[FLASHING.md](FLASHING.md)** — the one-time SWD flash of the toolhead with a Flipper Zero / DAP Link.
-- **[OS.md](OS.md)** — replacing Sovol's stock OS with Armbian Trixie (the last vendor layer, eMMC-level).
+- **[OS.md](OS.md)** — replacing Sovol's stock OS with vanilla Armbian on the stock 8 GB eMMC (the last vendor layer; includes the one device-tree property that separates this board from a real CB1).
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — the system map: host + three CAN MCUs, pin maps, what is forked vs stock.
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — what bites on mainline and how to clear it: eddy NACK / power-cycle, version-specific eddy options, the resonance-test host overrun, accelerometer noise, flashing all three for tap, fan quirks.
 - **[klipper-plugin/](klipper-plugin/)** — `sovol_codes.py`, an opt-in plugin reproducing the vendor's numeric knob-screen codes on mainline.
