@@ -88,3 +88,9 @@ ln -s mks.debian.10.64-bit "NA.debian.$(. /etc/os-release; echo $VERSION_ID).64-
 ```
 
 Verify: a `janus` process appears under the agent, and the "Webcam is now streaming in 0.1FPS" warning stops showing up in the log. Both added files are untracked in the moonraker-obico checkout — they survive `git pull`, but not a hard reset; re-check them after a major agent update.
+
+## Moonraker: "Failed to load extension crowsnest" + a cascade of "Unparsed config option"
+
+Two gotchas in one. First: the widely-copied legacy `[update_manager crowsnest]` snippet points at `install_script: tools/pkglist.sh`, which no longer exists in crowsnest v5 (it moved to a venv + `requirements.txt` + `system-dependencies.json` layout) — and a non-existent `install_script` path fails the load of the whole section. Second: the follow-up "Unparsed config option 'origin: …'" / "'managed_services: …'" warnings on the section's other lines are a symptom of that single failure, not separate problems — don't chase them individually.
+
+Fix: take the snippet from the installed checkout itself — `~/crowsnest/resources/moonraker_update.txt` — verbatim, and restart Moonraker. Same rule generalizes: when adding any component to `[update_manager]`, prefer the `moonraker_update.txt` (or equivalent) shipped inside that component's repo over snippets from docs or memory; layouts drift, and the shipped file matches the code you actually have.
