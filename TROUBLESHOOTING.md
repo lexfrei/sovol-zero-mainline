@@ -73,6 +73,20 @@ Recent Klipper no longer emits the old `Stats` / `Klipper state: Ready` log line
 
 The `bullseye-backports` suite was removed from the mirrors (404). Comment the active backports line in `/etc/apt/sources.list` (keep a backup) before any apt-based install. Stay within bullseye — a `bullseye→bookworm` dist-upgrade moves Python 3.9→3.11 and breaks the Klipper/Moonraker venvs, with no live rootfs recovery unless you can re-image the eMMC out-of-band (see [OS.md](OS.md)).
 
+### Armbian kernel branches and onboard Ethernet
+
+Onboard Ethernet (the in-package AC300 EPHY on the second EMAC) currently works out of the box **only on the 6.12.68 kernel from Armbian 26.2.1** — which is why [RUNBOOK.md](RUNBOOK.md) holds the kernel packages. Newer branches break it in ways that are all diagnosed and have fixes in flight; none of this bites while the hold is in place:
+
+- 6.18 stable (26.5.1): no ethernet interface at all — the BSP driver stack was dropped before the mainline path was wired up. Reported in [armbian/build#10084](https://github.com/armbian/build/issues/10084), dts fix merged in [armbian/build#10155](https://github.com/armbian/build/pull/10155) (nightlies only so far).
+- 6.18 nightly / 7.1 edge: a probe race — the built-in `ac300` PHY driver defers on the modular `pwm-sunxi-enhance` clock provider, and the generic PHY driver grabs the powered-down EPHY first (sticky until reboot; signature: `PHY [...] driver [Generic PHY]` re-attaching every ~6 s, link flaps, RX stays 0 while TX counts). Whether a given board is hit is pure boot timing — verified both ways on two boards. Fix: [armbian/build#10242](https://github.com/armbian/build/pull/10242); local workaround: early-load `pwm_sunxi_enhance` via `/etc/modules-load.d/` + `/etc/initramfs-tools/modules`.
+- Two more CB1 dts issues found on the way, relevant to the onboard radio: the wifi pwrseq clock is named so the 32 kHz LPO never turns on ([armbian/build#10240](https://github.com/armbian/build/pull/10240)), and the wifi power/wake lines are exposed as gpio-LEDs that `armbian-led-state` pulses mid-SDIO-init ([armbian/build#10241](https://github.com/armbian/build/pull/10241)).
+
+Un-hold once these land in a stable release; until then treat "no network after `apt full-upgrade`" as this, not as broken hardware.
+
+### pip downloads from the board stall forever
+
+Large downloads from PyPI's CDN can stall from the printer's network position: pip sits on a dead connection (`ss` shows `CLOSE-WAIT` with unread bytes) making zero progress, while apt and GitHub work fine. Pinning a different CDN edge in `/etc/hosts` does not help. Don't fight it — download the wheels on another machine (`pip download <pkg> --only-binary=:all: --platform manylinux2014_aarch64 --python-version 3.13 --implementation cp`), `scp` them over, and `pip install --no-index *.whl`.
+
 ## Obico streams at 0.1 FPS
 
 moonraker-obico drops to 0.1 FPS snapshot streaming when it cannot start its bundled Janus — and on this board it never can out of the box. `find_precompiled_dir()` builds the precompiled-variant name from `board_id()`, which returns `NA` on anything that is not a Raspberry Pi or an MKS board, so the resolver looks for `NA.debian.<ver>.64-bit`; the fallback regex requires the same board prefix, so the bundled `rpi.*`/`mks.*` builds are never even considered. A hardware h264 encoder is NOT actually required for a usable stream: once Janus runs, the agent serves MJPEG over a WebRTC data channel at the webcam's real frame rate.
