@@ -1,0 +1,54 @@
+---
+title: Конфиг Klipper
+weight: 2
+---
+
+# Перевод конфига на mainline
+
+Вендорский `printer.cfg` как есть на upstream Klipper не заводится — несколько секций завязаны на поведение, которое есть только в вендорской прошивке. Переведи их с вендорского конфига; остальное переносится как есть.
+
+## Eddy на software I2C
+
+Вендор гонял LDC1612 по аппаратному `i2c2`, но только потому, что его F103-прошивка тащит обходы errata аппаратного I2C у STM32F1, которых на mainline нет; на mainline аппаратный `i2c2` кидает `START_NACK` → shutdown. Используй bitbang:
+
+```ini
+# replace  i2c_bus: i2c2  with:
+i2c_software_scl_pin: extruder_mcu:PB10
+i2c_software_sda_pin: extruder_mcu:PB11
+```
+
+Software I2C тянет одиночные чтения, tap-хоминг и bulk-поток rapid_scan — независимо подтверждено [asnajder/zero-config](https://github.com/asnajder/zero-config).
+
+## Eddy `[probe_eddy_current]` на `master`
+
+Используй `descend_z` (переименование старого `z_offset`; старое имя остаётся как deprecated-алиас) и `max_sensor_hz`. `reg_drive_current` и таблицу частота→высота пишет калибровка (`SAVE_CONFIG`), руками их не задают. Выброси вендор-онли `vir_contact_speed` и выставь `descend_z` в высоту *захода* калибровки (~0.5 мм) — **не** переноси в него старое *значение* `z_offset` от вендора; реальный офсет сопло-датчик впитывается в таблицу калибровки.
+
+Если запинишь тег `v0.13.0` вместо `master`, эти ключи tap-эры отвергаются и требуется `z_offset` — ещё одна причина сидеть на `master`.
+
+## Хоминг Z — `homing_override`, а не `safe_z_home`
+
+Механического Z-эндстопа нет. Используй `[homing_override]`:
+
+- `set_position_z: 0`
+- защитный z-hop
+- хоминг X/Y по их механическим эндстопам
+- `G28 Z` на `probe:z_virtual_endstop`
+
+На `master` ты вдобавок получаешь **tap** (`PROBE METHOD=tap`) для Z по касанию соплом.
+
+## Выброси вендор-онли модули
+
+- `[z_offset_calibration]` и макросы, вызывающие `RUN_PROBE_VIR_CONTACT` / `Z_OFFSET_CALIBRATION`, заменяются upstream eddy/tap — перепиши или удали их.
+- Вендорские shell-макросы OTA / вывода IP — мусор, выброси их. Сторонний `gcode_shell_command.py` добавляй только если оставляешь макрос, которому реально нужна shell-команда.
+
+## Наведи MCU на их новые UUID
+
+Обнови `[mcu] canbus_uuid` / `[mcu extruder_mcu] canbus_uuid` на новые реальные UUID из [миграции MCU]({{< relref "/zero/firmware/mcu-migration" >}}) (mainline читает реальный аппаратный UID, так что оба MCU поднялись на свежих UUID).
+
+## Затем запусти Klipper
+
+Убедись, что оба MCU грузятся на одной версии `master` — счётчики команд совпадают, нет расхождений `is not compatible` / `Unknown command` — и `state: ready` (спрашивай у Moonraker `/printer/info`, а не грепом по логу). Затем переходи к [калибровке]({{< relref "calibration" >}}).
+
+## Восстановление конфига из бэкапа {#restoring-a-config-from-backup}
+
+Если ты пересобираешь, а не переводишь с нуля, восстанавливай `printer.cfg` **вместе с его блоком `SAVE_CONFIG`** — таблица частот eddy, `tap_threshold` и bed mesh живут там и заново их не набьёшь — плюс `saved_variables.cfg`. Поправь абсолютные пути, если сменился пользователь ОС (filename у `[save_variables]` — классический случай). Если klippy жалуется на неизвестную секцию или опцию, значит нужный плагин отсутствует или конфиг тащит опцию, которую новый плагин выкинул — ставь или подрезай соответственно, не удаляй секции целиком вслепую.
