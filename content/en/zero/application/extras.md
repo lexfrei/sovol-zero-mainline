@@ -30,6 +30,8 @@ and the usual netplan `wifis: wlan0:` block (`key-management: "psk"`, `optional:
 
 The board's three detect ports (silkscreen legend `PLA_DET` / `TWINE_DET` / `DOOR_DET`) share the same `3V3 / GND / signal` pinout, which happens to match the SFS V2.0's two split tails: the `red-empty-blue` tail carries VCC + the runout switch signal, the `empty-black-green` tail carries GND + the motion signal — the module powers up only with both plugged. Any two ports work; the signal pins by legend order are `PB2` (PLA_DET), `PE7` (TWINE_DET), `PE8` (DOOR_DET). Cable colours vary between batches — trust the module PCB's own port markings over wire colour.
 
+Install it without opening the machine. The stock filament sensor's cable is potted into its motherboard port — pulling it out means disassembling the printer and scraping the compound off the port. Don't: leave the stock cable plugged in, unclip only the old sensor from its end, and zip-tie the free end out of the way with the ties in the box. Route the SFS's own cable in through the chamber's side window and land it on two adjacent free ports (`PE7` + `PE8` below), leaving the potted stock port alone.
+
 Klipper config for green→PE7 (motion), blue→PE8 (runout), stock PB2 sensor removed from the path:
 
 ```ini
