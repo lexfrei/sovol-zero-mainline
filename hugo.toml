@@ -1,0 +1,72 @@
+baseURL = 'https://sovol.lexfrei.dev/'
+theme = 'hugo-book'
+defaultContentLanguage = 'en'
+defaultContentLanguageInSubdir = false
+
+enableRobotsTXT = true
+enableGitInfo = true
+disablePathToLower = true
+# Warn (don't fail) on relref to a page that doesn't exist yet.
+refLinksErrorLevel = 'warning'
+buildDrafts = false
+buildFuture = false
+buildExpired = false
+
+# Needed for the mermaid shortcode (layer map, decision trees) and raw HTML callouts.
+[markup]
+[markup.goldmark.renderer]
+  unsafe = true
+[markup.tableOfContents]
+  startLevel = 1
+  endLevel = 3
+
+[outputs]
+  home = ['html', 'rss']
+
+# Directory-per-language: content/en and content/ru mirror the same tree.
+# English is the canonical source; Russian is a full translation.
+[languages]
+[languages.en]
+  languageName = 'English'
+  languageCode = 'en-us'
+  contentDir = 'content/en'
+  weight = 1
+  title = 'Sovol on mainline Klipper'
+
+[languages.ru]
+  languageName = 'Русский'
+  languageCode = 'ru-ru'
+  contentDir = 'content/ru'
+  weight = 2
+  title = 'Sovol на mainline Klipper'
+
+[params]
+  # Respect the reader's OS light/dark preference.
+  BookTheme = 'auto'
+
+  # Render every top-level section (concepts, zero, ...) in the sidebar tree,
+  # instead of a single 'docs' root. Adding a model folder extends the menu.
+  BookSection = '/'
+
+  # Right-side table of contents.
+  BookToC = true
+
+  # Built-in fuse.js search.
+  BookSearch = true
+
+  # No comment system.
+  BookComments = false
+
+  # Cache visited pages for offline reading (runbooks at the machine, flaky wifi).
+  BookServiceWorker = 'precache'
+
+  # Check internal markdown links at build time; warn on breakage.
+  BookPortableLinks = 'warning'
+
+  # Only show the language switcher on pages that actually have a translation.
+  BookTranslatedOnly = false
+
+  BookRepo = 'https://github.com/lexfrei/sovol-zero-mainline'
+  BookEditLink = '{{ .Site.Params.BookRepo }}/edit/main/content/{{ .Site.Language.Lang }}/{{ .File.Path }}'
+  BookLastChangeLink = '{{ .Site.Params.BookRepo }}/commit/{{ .GitInfo.Hash }}'
+  BookDateFormat = 'January 2, 2006'

@@ -2,3 +2,8 @@ out/
 *.bin
 __pycache__/
 .DS_Store
+
+# Hugo build artifacts
+/public/
+/resources/
+.hugo_build.lock

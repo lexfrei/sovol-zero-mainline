@@ -1,0 +1,5 @@
+# Hugo theme is vendored — exclude from language stats and collapse in diffs.
+themes/** linguist-vendored
+
+# Extracted vendor patches are a record, not authored source.
+klipper-patches/*.patch linguist-generated
