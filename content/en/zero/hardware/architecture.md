@@ -88,6 +88,9 @@ For migration: current upstream covers the eddy sensor natively — `probe_eddy_
 | Bed | `PD12` | `my_thermistor` (100 k) | 125 °C | PID |
 | Chamber (optional) | `hot_mcu:PA0` | EPCOS 100K | 70 °C | watermark |
 
+> [!WARNING]
+> **Check the hotend for its copper bushing.** Some units — including ones shipping in mid-2026 — arrive with the hotend's copper bushing missing, even though the product listing shows it. Without it the heatsink can't pull heat off the heatbreak: the radiator does nothing, thermal paste doesn't compensate, and you get heat creep and clogs. Sovol replaces affected hotends for free — check yours before chasing a phantom extrusion problem. This is the shared Zero/SV08 Max toolhead, so it applies to both.
+
 Fans:
 
 - `[fan_generic fan0]` — part cooling (`extruder_mcu:PB0`)
