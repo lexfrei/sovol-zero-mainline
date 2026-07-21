@@ -37,9 +37,9 @@ If you're on an older image that also pinned the kernel over a *WiFi* SDIO regre
 
 ## Moving off the hold {#moving-off-the-hold}
 
-The Ethernet fixes are tracked upstream — the missing-interface dts fix ([#10155](https://github.com/armbian/build/pull/10155)), the PHY probe-race fix ([#10242](https://github.com/armbian/build/pull/10242)), and two CB1 WiFi dts fixes ([#10240](https://github.com/armbian/build/pull/10240), [#10241](https://github.com/armbian/build/pull/10241)). Two ways forward, once you want a newer kernel:
+The Ethernet fixes are merged upstream — the missing-interface dts fix ([#10155](https://github.com/armbian/build/pull/10155)), the PHY probe-race fix ([#10242](https://github.com/armbian/build/pull/10242)), and two CB1 WiFi dts fixes ([#10240](https://github.com/armbian/build/pull/10240), [#10241](https://github.com/armbian/build/pull/10241)). All four are in `armbian/build` main, tagged for the Q3 2026 release — no longer nightly-only. Two ways forward, once you want a newer kernel:
 
-1. **Wait for a stable release.** When those fixes ship in a stable Armbian release, `apt-mark unhold linux-image-current-sunxi64 linux-dtb-current-sunxi64` and upgrade normally. Check the issue links above for current status before unholding — as documented they were nightly/edge only.
+1. **Wait for the stable release.** Once the Q3 2026 stable Armbian release ships with these fixes, `apt-mark unhold linux-image-current-sunxi64 linux-dtb-current-sunxi64` and upgrade normally. Check the PR links above for the release tag before unholding.
 2. **Go to 6.18 now with the local workaround** *(experimental — not yet verified on the Zero)*. Early-load the `pwm_sunxi_enhance` module so the `ac300` PHY wins the probe race: add it to `/etc/modules-load.d/` **and** `/etc/initramfs-tools/modules`, rebuild the initramfs, then move to the 6.18 kernel (`armbian-config` can switch the kernel branch). This is the documented workaround for the probe race, but "Ethernet came back on the Zero" hasn't been confirmed — treat it as a test to run with a backup and a fallback, not a recipe.
 
 Until you've done one of these, treat "no network after `apt full-upgrade`" as the known Ethernet regression, not broken hardware.

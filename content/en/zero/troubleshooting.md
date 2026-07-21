@@ -80,13 +80,13 @@ The `bullseye-backports` suite was removed from the mirrors (404). Comment the a
 
 ### Armbian kernel branches and onboard Ethernet {#armbian-kernel-branches-and-onboard-ethernet}
 
-Onboard Ethernet (the in-package AC300 EPHY on the second EMAC) currently works out of the box **only on the 6.12.68 kernel from Armbian 26.2.1** — which is why the clean-slate install holds the kernel packages. Newer branches break it in ways that are all diagnosed and have fixes in flight; none of this bites while the hold is in place:
+Onboard Ethernet (the in-package AC300 EPHY on the second EMAC) currently works out of the box **only on the 6.12.68 kernel from Armbian 26.2.1** — which is why the clean-slate install holds the kernel packages. Newer branches break it in ways that are all diagnosed and now fixed upstream — all four fixes are merged to `armbian/build` main (tagged for the Q3 2026 release), just not in a stable release yet. None of this bites while the hold is in place:
 
-- 6.18 stable (26.5.1): no ethernet interface at all — the BSP driver stack was dropped before the mainline path was wired up. Reported in [armbian/build#10084](https://github.com/armbian/build/issues/10084), dts fix merged in [armbian/build#10155](https://github.com/armbian/build/pull/10155) (nightlies only so far).
+- 6.18 stable (26.5.1): no ethernet interface at all — the BSP driver stack was dropped before the mainline path was wired up. Reported in [armbian/build#10084](https://github.com/armbian/build/issues/10084), dts fix in [armbian/build#10155](https://github.com/armbian/build/pull/10155).
 - 6.18 nightly / 7.1 edge: a probe race — the built-in `ac300` PHY driver defers on the modular `pwm-sunxi-enhance` clock provider, and the generic PHY driver grabs the powered-down EPHY first (sticky until reboot; signature: `PHY [...] driver [Generic PHY]` re-attaching every ~6 s, link flaps, RX stays 0 while TX counts). Whether a given board is hit is pure boot timing — verified both ways on two boards. Fix: [armbian/build#10242](https://github.com/armbian/build/pull/10242); local workaround: early-load `pwm_sunxi_enhance` via `/etc/modules-load.d/` + `/etc/initramfs-tools/modules`.
 - Two more CB1 dts issues found on the way, relevant to the onboard radio: the wifi pwrseq clock is named so the 32 kHz LPO never turns on ([armbian/build#10240](https://github.com/armbian/build/pull/10240)), and the wifi power/wake lines are exposed as gpio-LEDs that `armbian-led-state` pulses mid-SDIO-init ([armbian/build#10241](https://github.com/armbian/build/pull/10241)).
 
-Un-hold once these land in a stable release; until then treat "no network after `apt full-upgrade`" as this, not as broken hardware. The [updatable-OS page]({{< relref "/zero/os/updatable" >}}) tracks the path off the hold.
+Un-hold once the Q3 2026 stable release ships; until then treat "no network after `apt full-upgrade`" as this, not as broken hardware. The [updatable-OS page]({{< relref "/zero/os/updatable" >}}) tracks the path off the hold.
 
 ### pip downloads from the board stall forever
 

@@ -37,9 +37,9 @@ apt-mark hold linux-image-current-sunxi64 linux-dtb-current-sunxi64
 
 ## Уход с hold {#moving-off-the-hold}
 
-Фиксы Ethernet отслеживаются upstream — dts-фикс отсутствующего интерфейса ([#10155](https://github.com/armbian/build/pull/10155)), фикс гонки probe у PHY ([#10242](https://github.com/armbian/build/pull/10242)) и два dts-фикса WiFi CB1 ([#10240](https://github.com/armbian/build/pull/10240), [#10241](https://github.com/armbian/build/pull/10241)). Два пути вперёд, когда захочешь более новое ядро:
+Фиксы Ethernet вмёржены upstream — dts-фикс отсутствующего интерфейса ([#10155](https://github.com/armbian/build/pull/10155)), фикс гонки probe у PHY ([#10242](https://github.com/armbian/build/pull/10242)) и два dts-фикса WiFi CB1 ([#10240](https://github.com/armbian/build/pull/10240), [#10241](https://github.com/armbian/build/pull/10241)). Все четыре в main `armbian/build`, помечены на релиз Q3 2026 — больше не только в nightly. Два пути вперёд, когда захочешь более новое ядро:
 
-1. **Дождись stable-релиза.** Когда эти фиксы доедут до stable-релиза Armbian, `apt-mark unhold linux-image-current-sunxi64 linux-dtb-current-sunxi64` и апгрейдись как обычно. Перед снятием hold проверь ссылки на issue выше на текущий статус — как задокументировано, они были только в nightly/edge.
+1. **Дождись stable-релиза.** Когда выйдет stable-релиз Armbian Q3 2026 с этими фиксами, `apt-mark unhold linux-image-current-sunxi64 linux-dtb-current-sunxi64` и апгрейдись как обычно. Перед снятием hold проверь ссылки на PR выше на тег релиза.
 2. **Перейди на 6.18 сейчас с локальным обходом** *(экспериментально — пока не проверено на Zero)*. Загрузи модуль `pwm_sunxi_enhance` пораньше, чтобы PHY `ac300` выиграл гонку probe: добавь его в `/etc/modules-load.d/` **и** `/etc/initramfs-tools/modules`, пересобери initramfs, затем перейди на ядро 6.18 (`armbian-config` умеет переключать ветку ядра). Это задокументированный обход гонки probe, но «Ethernet вернулся на Zero» не подтверждено — трактуй это как тест, который надо гонять с бэкапом и путём отката, а не как рецепт.
 
 Пока не сделаешь одно из этого, трактуй «нет сети после `apt full-upgrade`» как известную регрессию Ethernet, а не как сломанное железо.
