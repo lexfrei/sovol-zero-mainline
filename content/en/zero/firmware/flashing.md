@@ -7,11 +7,8 @@ weight: 2
 
 The toolhead Katapult is request-only and can't be recovered over CAN once an app is broken, so an SWD probe is the safety net. Any CMSIS-DAP probe works — an ST-Link V2 clone, or a Flipper Zero running the **DAP Link** app.
 
-{{< hint warning >}}
-
-**Verified scope.** Everything here was tested only on the **F103 toolhead**, and only with a **Flipper Zero** (DAP Link app). An ST-Link should behave the same (it is standard SWD), and the H750 section below is reasoned, not tested. Corrections and additions are welcome — open a PR.
-
-{{< /hint >}}
+> [!WARNING]
+> **Verified scope.** Everything here was tested only on the **F103 toolhead**, and only with a **Flipper Zero** (DAP Link app). An ST-Link should behave the same (it is standard SWD), and the H750 section below is reasoned, not tested. Corrections and additions are welcome — open a PR.
 
 ## The probe (Flipper Zero)
 

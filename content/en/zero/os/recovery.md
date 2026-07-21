@@ -40,11 +40,8 @@ If the cause was a kernel-in-place upgrade that killed onboard ethernet, that's 
 - **Mainboard (H750).** As long as Katapult survives you re-flash over USB-Katapult. Only a **corrupted bootloader** forces SWD on the buried mainboard header. Your build-from-source rollback is a vendor-equivalent firmware compiled from your backed-up vendor `~/klipper` at the same `0x8020000` offset.
 - **No backup and stuck?** [asnajder/zero-config](https://github.com/asnajder/zero-config) publishes ST-LINK-flashable vendor recovery images for the mainboard (incl. its Katapult), the toolhead, and the chamber MCU. They are third-party prebuilts of unverifiable provenance — an emergency fallback only, not a routine source.
 
-{{< hint danger >}}
-
-**Don't touch power or USB mid-write.** A clean flash is recoverable through Katapult, but an interrupted write that corrupts Katapult itself is the one case that forces SWD on the buried mainboard. Take your own SWD dump first — that is your rollback.
-
-{{< /hint >}}
+> [!CAUTION]
+> **Don't touch power or USB mid-write.** A clean flash is recoverable through Katapult, but an interrupted write that corrupts Katapult itself is the one case that forces SWD on the buried mainboard. Take your own SWD dump first — that is your rollback.
 
 ## Config loss
 

@@ -20,11 +20,8 @@ weight: 1
 
 Armbian Imager 2.0 (июнь 2026) добавил экран настройки в стиле Raspberry Pi Imager: выбери vendor → board → image → storage, и впиши имя пользователя, пароль, WiFi (SSID + пароль + country code), timezone и locale, которые он применит на первой загрузке. Прошей Sovobian на microSD таким способом, загрузись — и плата настроена ещё до того, как ты залогинишься.
 
-{{< hint warning >}}
-
-**Одна оговорка, и это радио Zero.** Встроенный RTL8189FTV не может завершить WPA3-SAE. На SSID в режиме перехода WPA2/WPA3 обобщённый пресид, который не пинит WPA-PSK, молча не подключится. Если WiFi не поднимается, почти наверняка причина в этом — откатись на Вариант 2 (Ethernet) или запинь `key-management: "psk"` руками (смотри [блок netplan]({{< relref "armbian" >}}#headless-preseed-why-wifi-has-to-be-baked-in)).
-
-{{< /hint >}}
+> [!WARNING]
+> **Одна оговорка, и это радио Zero.** Встроенный RTL8189FTV не может завершить WPA3-SAE. На SSID в режиме перехода WPA2/WPA3 обобщённый пресид, который не пинит WPA-PSK, молча не подключится. Если WiFi не поднимается, почти наверняка причина в этом — откатись на Вариант 2 (Ethernet) или запинь `key-management: "psk"` руками (смотри [блок netplan]({{< relref "armbian" >}}#headless-preseed-why-wifi-has-to-be-baked-in)).
 
 ## Вариант 2 — Ethernet-кабель, потом SSH (самый надёжный)
 

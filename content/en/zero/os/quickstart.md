@@ -20,11 +20,8 @@ Pick the option that fits you, easiest first.
 
 Armbian Imager 2.0 (June 2026) added a Raspberry-Pi-Imager-style setup screen: pick vendor → board → image → storage, and fill in a username, password, WiFi (SSID + password + country code), timezone, and locale that it applies on first boot. Flash Sovobian to a microSD this way, boot, and the board is configured before you ever log in.
 
-{{< hint warning >}}
-
-**One caveat, and it's the Zero's radio.** The onboard RTL8189FTV can't complete WPA3-SAE. On a WPA2/WPA3-transition SSID a generic preseed that doesn't pin WPA-PSK will silently fail to join. If WiFi doesn't come up, that's almost certainly why — fall back to Option 2 (Ethernet), or pin `key-management: "psk"` by hand (see [the netplan block]({{< relref "armbian" >}}#headless-preseed-why-wifi-has-to-be-baked-in)).
-
-{{< /hint >}}
+> [!WARNING]
+> **One caveat, and it's the Zero's radio.** The onboard RTL8189FTV can't complete WPA3-SAE. On a WPA2/WPA3-transition SSID a generic preseed that doesn't pin WPA-PSK will silently fail to join. If WiFi doesn't come up, that's almost certainly why — fall back to Option 2 (Ethernet), or pin `key-management: "psk"` by hand (see [the netplan block]({{< relref "armbian" >}}#headless-preseed-why-wifi-has-to-be-baked-in)).
 
 ## Option 2 — Ethernet cable, then SSH (most reliable)
 

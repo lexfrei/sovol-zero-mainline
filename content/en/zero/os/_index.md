@@ -17,8 +17,5 @@ This layer has several entry points depending on your hardware and goal:
 - **[Updatable Armbian]({{< relref "updatable" >}})** — keep the OS updatable across `apt`/kernel upgrades. The 40 MHz overlay is already upgrade-proof; only the kernel is held, and only for onboard ethernet.
 - **[Recovery]({{< relref "recovery" >}})** — a machine that won't boot, and the backups that make every OS step reversible.
 
-{{< hint info >}}
-
-**Layer 2 survives layer 3.** The MCU firmware lives in the MCUs, not on the eMMC — wiping or replacing the OS does not touch it, and the CAN UUIDs stay stable. A machine whose OS died boots a fresh OS and finds its MCUs exactly as they were.
-
-{{< /hint >}}
+> [!NOTE]
+> **Layer 2 survives layer 3.** The MCU firmware lives in the MCUs, not on the eMMC — wiping or replacing the OS does not touch it, and the CAN UUIDs stay stable. A machine whose OS died boots a fresh OS and finds its MCUs exactly as they were.

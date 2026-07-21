@@ -34,11 +34,8 @@ weight: 3
 
 Запиши rootfs обратно, загрузи плату, убедись, что она берёт DHCP и eMMC работает DDR52 на эффективных 37.5 МГц (см. [проверку клока]({{< relref "armbian" >}}#first-boot-verifying-the-emmc-clock)).
 
-{{< hint info >}}
-
-**Правка офлайн на macOS.** macOS не может смонтировать ext4 rootfs или FAT-раздел типа 0xEA. Используй `mtools` (`mcopy`/`mmd`) для boot-раздела и `debugfs` из Homebrew-овского `e2fsprogs` для rootfs, работая по образу на байтовых офсетах разделов из `fdisk`. Точные команды — на [странице ванильного Armbian]({{< relref "armbian" >}}#editing-the-image-offline).
-
-{{< /hint >}}
+> [!NOTE]
+> **Правка офлайн на macOS.** macOS не может смонтировать ext4 rootfs или FAT-раздел типа 0xEA. Используй `mtools` (`mcopy`/`mmd`) для boot-раздела и `debugfs` из Homebrew-овского `e2fsprogs` для rootfs, работая по образу на байтовых офсетах разделов из `fdisk`. Точные команды — на [странице ванильного Armbian]({{< relref "armbian" >}}#editing-the-image-offline).
 
 ## 3. Обнови пакеты
 

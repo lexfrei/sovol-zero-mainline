@@ -7,11 +7,8 @@ weight: 5
 
 The worry that an `apt` upgrade will "lose the dts" and break the eMMC is mostly unfounded, and the real constraint is narrower than it looks. This page separates the two.
 
-{{< hint info >}}
-
-**Experimental in one place.** Everything about *why* the kernel is held is confirmed and documented. The path *off* the hold (moving to a newer kernel and keeping onboard Ethernet) is not yet verified on the Zero — it's flagged below. Take a [full backup]({{< relref "recovery" >}}#back-up-first-the-checklist) before testing it.
-
-{{< /hint >}}
+> [!NOTE]
+> **Experimental in one place.** Everything about *why* the kernel is held is confirmed and documented. The path *off* the hold (moving to a newer kernel and keeping onboard Ethernet) is not yet verified on the Zero — it's flagged below. Take a [full backup]({{< relref "recovery" >}}#back-up-first-the-checklist) before testing it.
 
 ## The 40 MHz overlay is already upgrade-proof
 
@@ -31,11 +28,8 @@ apt-mark hold linux-image-current-sunxi64 linux-dtb-current-sunxi64
 
 With just those two held, `apt update && apt full-upgrade` updates everything else normally — userspace, Klipper's dependencies, security fixes. You are on a supported, updatable system; only the kernel is pinned, and only because of the Ethernet regression.
 
-{{< hint danger >}}
-
-**Never `apt full-upgrade` without the hold in place.** Without it the first upgrade replaces the kernel in place and takes onboard Ethernet with it — with no live rootfs recovery unless you can re-image the eMMC. Set the hold first.
-
-{{< /hint >}}
+> [!CAUTION]
+> **Never `apt full-upgrade` without the hold in place.** Without it the first upgrade replaces the kernel in place and takes onboard Ethernet with it — with no live rootfs recovery unless you can re-image the eMMC. Set the hold first.
 
 ## The WiFi hold was a false alarm
 

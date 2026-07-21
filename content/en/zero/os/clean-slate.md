@@ -34,11 +34,8 @@ Mount the ext4 rootfs (partition 2) on the Linux side and bake in everything the
 
 Write the rootfs back, boot the board, confirm it takes DHCP and the eMMC runs DDR52 at 37.5 MHz effective (see [verifying the clock]({{< relref "armbian" >}}#first-boot-verifying-the-emmc-clock)).
 
-{{< hint info >}}
-
-**Editing offline on macOS.** macOS can't mount the ext4 rootfs or the 0xEA-typed FAT partition. Use `mtools` (`mcopy`/`mmd`) for the boot partition and `debugfs` from Homebrew's `e2fsprogs` for the rootfs, operating on the image at the partition byte offsets from `fdisk`. The exact commands are on [the vanilla Armbian page]({{< relref "armbian" >}}#editing-the-image-offline).
-
-{{< /hint >}}
+> [!NOTE]
+> **Editing offline on macOS.** macOS can't mount the ext4 rootfs or the 0xEA-typed FAT partition. Use `mtools` (`mcopy`/`mmd`) for the boot partition and `debugfs` from Homebrew's `e2fsprogs` for the rootfs, operating on the image at the partition byte offsets from `fdisk`. The exact commands are on [the vanilla Armbian page]({{< relref "armbian" >}}#editing-the-image-offline).
 
 ## 3. Update packages
 

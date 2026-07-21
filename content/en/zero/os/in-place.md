@@ -28,11 +28,8 @@ Sovobian on microSD  →  boot from SD  →  armbian-install  →  system now on
 
 The friendly TUI does the same thing, if you'd rather click through a menu: `armbian-config` → System → install to eMMC.
 
-{{< hint warning >}}
-
-**Needs-verification on the Zero specifically.** The SD-boot + `armbian-install` route is confirmed on the SV08 (same H616 host, same CB1 lineage, same boot ROM) and endorsed by Sovobian's own docs, but a Zero-specific transcript wasn't found — treat the exact menu wording and the clone as reproduced-elsewhere, not Zero-verified. Two things to check after cloning: that the eMMC runs at the [verified 37.5 MHz clock]({{< relref "armbian" >}}#first-boot-verifying-the-emmc-clock) (i.e. the `overlay-user/` overlay travelled to the eMMC), and that the board still comes up on the eMMC alone. Keep the SD card — with no OTG, it is your only rescue path if the eMMC install goes wrong.
-
-{{< /hint >}}
+> [!WARNING]
+> **Needs-verification on the Zero specifically.** The SD-boot + `armbian-install` route is confirmed on the SV08 (same H616 host, same CB1 lineage, same boot ROM) and endorsed by Sovobian's own docs, but a Zero-specific transcript wasn't found — treat the exact menu wording and the clone as reproduced-elsewhere, not Zero-verified. Two things to check after cloning: that the eMMC runs at the [verified 37.5 MHz clock]({{< relref "armbian" >}}#first-boot-verifying-the-emmc-clock) (i.e. the `overlay-user/` overlay travelled to the eMMC), and that the board still comes up on the eMMC alone. Keep the SD card — with no OTG, it is your only rescue path if the eMMC install goes wrong.
 
 ## Or just stay on the SD
 
