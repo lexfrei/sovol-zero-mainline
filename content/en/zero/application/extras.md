@@ -26,6 +26,12 @@ Name=wlan0
 
 and the usual netplan `wifis: wlan0:` block (`key-management: "psk"`, `optional: true`). With both in place the dongle associates on first boot with zero manual steps.
 
+## Stock PSU — keep it grounded, and a bolt-on replacement
+
+The stock 24 V supply fails often enough to plan for, and running it **without a mains earth** is what kills it — on one machine a dying PSU took the mainboard's onboard WiFi chip with it (the failure behind [the dead radio above](#usb-wifi-dongle-when-the-onboard-radio-dies)). Always run it grounded.
+
+For a drop-in replacement that needs no fabrication, a **MEAN WELL LRS-150-24** (24 V, 150 W) is bolt-on: two screws in the lower bay, move the cables across, done. It's a more reputable supply than the stock unit, so likely more tolerant of abuse. (A 48 V supply is a separate speed mod, not a replacement.)
+
 ## BTT SFS V2.0 filament sensor
 
 The board's three detect ports (silkscreen legend `PLA_DET` / `TWINE_DET` / `DOOR_DET`) share the same `3V3 / GND / signal` pinout, which happens to match the SFS V2.0's two split tails: the `red-empty-blue` tail carries VCC + the runout switch signal, the `empty-black-green` tail carries GND + the motion signal — the module powers up only with both plugged. Any two ports work; the signal pins by legend order are `PB2` (PLA_DET), `PE7` (TWINE_DET), `PE8` (DOOR_DET). Cable colours vary between batches — trust the module PCB's own port markings over wire colour.
