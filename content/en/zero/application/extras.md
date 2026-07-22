@@ -30,7 +30,7 @@ and the usual netplan `wifis: wlan0:` block (`key-management: "psk"`, `optional:
 
 The stock 24 V supply fails often enough to plan for, and running it **without a mains earth** is what kills it — on one machine a dying PSU took the mainboard's onboard WiFi chip with it (the failure behind [the dead radio above](#usb-wifi-dongle-when-the-onboard-radio-dies)). Always run it grounded.
 
-A failing supply often shows itself first as the mainboard-cooling fan running flat out from cold — that's voltage sag, so if the board fan screams from day one, suspect the PSU, not the fan. The same failure can creep in: peripherals (an MCU, Ethernet, the radio) dropping off one at a time while the board still boots is a power rail dying, not separate faults.
+A failing supply often shows itself first as the mainboard-cooling fan running flat out from cold — that's voltage sag, so if the board fan screams from day one, suspect the PSU, not the fan. It can also present the other way round: peripherals — an MCU, Ethernet, the radio — dropping off one at a time while the board still boots is the supply on its way out, not a set of separate mainboard faults.
 
 For a drop-in replacement that needs no fabrication, a **MEAN WELL LRS-150-24** (24 V, 150 W) is bolt-on: two screws in the lower bay, move the cables across, done. It's a more reputable supply than the stock unit, so likely more tolerant of abuse. (A 48 V supply is a separate [speed mod](#48-v-speed-mod), not a replacement.)
 
