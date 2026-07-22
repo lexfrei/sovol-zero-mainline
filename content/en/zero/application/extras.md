@@ -30,7 +30,26 @@ and the usual netplan `wifis: wlan0:` block (`key-management: "psk"`, `optional:
 
 The stock 24 V supply fails often enough to plan for, and running it **without a mains earth** is what kills it — on one machine a dying PSU took the mainboard's onboard WiFi chip with it (the failure behind [the dead radio above](#usb-wifi-dongle-when-the-onboard-radio-dies)). Always run it grounded.
 
-For a drop-in replacement that needs no fabrication, a **MEAN WELL LRS-150-24** (24 V, 150 W) is bolt-on: two screws in the lower bay, move the cables across, done. It's a more reputable supply than the stock unit, so likely more tolerant of abuse. (A 48 V supply is a separate speed mod, not a replacement.)
+A failing supply often shows itself first as the mainboard-cooling fan running flat out from cold — that's voltage sag, so if the board fan screams from day one, suspect the PSU, not the fan. The same failure can creep in: peripherals (an MCU, Ethernet, the radio) dropping off one at a time while the board still boots is a power rail dying, not separate faults.
+
+For a drop-in replacement that needs no fabrication, a **MEAN WELL LRS-150-24** (24 V, 150 W) is bolt-on: two screws in the lower bay, move the cables across, done. It's a more reputable supply than the stock unit, so likely more tolerant of abuse. (A 48 V supply is a separate [speed mod](#48-v-speed-mod), not a replacement.)
+
+## Extruder gearbox — grease it, steel gears if you run it hard
+
+The planetary reduction in the extruder is **plastic** — the brass sheen is grease, not metal — and it ships nearly dry. Over long runs the ring, satellites, and drive gear wear each other down; a worn set feeds unevenly and the extruder grinds filament instead of clicking. Two things help:
+
+- **Re-grease before the first run** with Molykote 30L / EM-50L. Lithium greases (Litol, Ciatim) darken and wet plastic poorly — don't use them.
+- **When it's worn, go steel.** Orbiter 2.0 / 2.5 hardened gears drop in. For the sun/drive gear specifically, one long-running report (three machines, weeks of 24/7) uses an "XHGMAK 0.5-module, 10–22 T, steel 45" gear bonded with Loctite 638 — it sits at ~0.02 mm clearance and won't hold torque unbonded.
+
+## Toolhead board in a heated chamber — the real ABS ceiling
+
+The toolhead MCU is a commercial STM32F103, rated to 85 °C ambient. In a closed heated chamber (ABS/PA, ~60–65 °C air) the head board climbs to 80–87 °C, Klipper raises the TMC2209 over-temp flag, and the F103 can drop off the CAN bus — so on the Zero the chamber temperature is capped by the head electronics, not the hotend. Some early heads have no heatsink at all.
+
+To run the chamber hotter: pull the toolhead cover (drops it ~10 °C), add a small copper heatsink on the MCU and driver, or fit the 6010-fan cooling duct. A higher-rated MCU board doesn't fix it — the same TMC2209 driver still overheats.
+
+## 48 V speed mod {#48-v-speed-mod}
+
+The mainboard is built for 48 V — there's a separate labelled 48 V input and two jumpers, factory-set to 24 V — but Sovol ships only a 24 V supply to hit a price point. Fit a 48 V PSU (a MeanWell UHP-350-48 sits flush in the under-bed bay) and move both jumpers; nothing in `printer.cfg` changes and `run_current` stays 3.5 A. It roughly doubles torque at high RPM — at 24 V the coils are starved by back-EMF and winding inductance — cutting a stock ~8-minute benchy to about 5. The 6 mm steel base plate needs drilling and tapping M3 for the new supply. This is a speed project, not the like-for-like replacement above.
 
 ## BTT SFS V2.0 filament sensor
 
