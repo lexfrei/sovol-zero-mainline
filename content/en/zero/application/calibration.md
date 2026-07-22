@@ -15,9 +15,13 @@ Run in order, `SAVE_CONFIG` after each:
 2. `PROBE_EDDY_CURRENT_CALIBRATE` — builds the freq→height table
 3. `PROBE_EDDY_CURRENT_TAP_CALIBRATE` — sets `tap_threshold`
 
+## Belt tension
+
+Aim for ~110 Hz plucking the XY belts over their 150 mm span. (The Z belt is factory ~137 Hz, but that's a 21.5 cm span — a different length, so don't compare the two numbers.) Tighter than that only cleans up the shaper graphs on paper and adds ringing. Klipper's belt *similarity* test is unreliable here — the head-mounted accelerometer is noisy at standstill from motor hold-current buzz, so its readings swing run to run. Check tension by ear or a phone tuner instead (Android works; iPhone noise suppression corrupts the reading).
+
 ## Input shaper
 
-`TEST_RESONANCES` — mainline's chunked-FIFO LIS2DW read gives a clean trace, and with a wide `[resonance_tester]` window (not the vendor's pinned 35–45 Hz) the real resonance surfaces. On this host the diagonal test needs the camera stopped — see [troubleshooting]({{< relref "/zero/troubleshooting" >}}).
+`TEST_RESONANCES` — mainline's chunked-FIFO LIS2DW read gives a clean trace, and with a wide `[resonance_tester]` window (not the vendor's pinned 35–45 Hz) the real resonance surfaces. On this host the diagonal test needs the camera stopped — see [troubleshooting]({{< relref "/zero/troubleshooting" >}}). Measured on this machine, `SHAPER_CALIBRATE` lands X at mzv ~64.6 Hz and Y at ei ~59.6 Hz with axis noise ~5–8 mm/s² — the real resonance sits in the 55–65 Hz band, nowhere near the vendor's 40 Hz.
 
 ## Functional check
 

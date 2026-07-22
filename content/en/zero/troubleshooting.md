@@ -42,6 +42,14 @@ The software-I2C sensor can get into a bad state across a series of soft Klipper
 
 You're on the `v0.13.0` tag, not `master`. `descend_z` and `max_sensor_hz` are tap-era keys that only exist on `master`; the tag has no tap and requires `z_offset` instead. This is one of the reasons the guide builds from `master` — if you pinned a tag anyway, match the eddy config to it (see [Klipper config]({{< relref "/zero/application/klipper-config" >}})).
 
+### Homing drives the bed down and grinds the Z belt
+
+Reported trigger: if the bed is left lowered at power-off, `G28` can't reach the eddy scan height on the first pass and steps the bed down ~5 mm each attempt, grinding the Z belt (the knob screen shows 104/113). Run `LDC_CALIBRATE_DRIVE_CURRENT` first — it writes `reg_drive_current` and homes from a known state.
+
+### Eddy homing error from a disturbed FFC
+
+`Error during homing z: Eddy current sensor error` (screen "TIP 123") usually means the eddy FFC is seated crookedly — the factory yellow glue lets it shift once the head has been opened. Reseat the connector.
+
 ## Input shaping & accelerometer
 
 ### Resonance test → `MCU 'mcu' shutdown: Timer too close`

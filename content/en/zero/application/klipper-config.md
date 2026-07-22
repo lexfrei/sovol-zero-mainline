@@ -45,6 +45,13 @@ On `master` you also get **tap** (`PROBE METHOD=tap`) for nozzle-contact Z.
 
 Update `[mcu] canbus_uuid` / `[mcu extruder_mcu] canbus_uuid` to the new real UUIDs from the [MCU migration]({{< relref "/zero/firmware/mcu-migration" >}}) (mainline reads the real hardware UID, so both MCUs came up on fresh UUIDs).
 
+## A few facts that bite
+
+- **Origin (0,0) is the front-left corner.** The Creality K1c — a common config donor — has it front-right, so a reused K1 config gives mirrored coordinates and a wrong-way mesh. Fix the axis directions rather than fighting the mesh.
+- **No dedicated toolhead-temp sensor.** For a rough head readout, read the F103 die itself: `[temperature_sensor Toolhead_Temp]` with `sensor_type: temperature_mcu` and `sensor_mcu: extruder_mcu`.
+- **Some units have the X and Y stepper connectors physically swapped.** If an axis runs the wrong way or the wrong motor turns, swap them in config rather than rewiring.
+- **The buzzer is unpopulated** though its circuit is on the board; the F103's active buzzer can't vary pitch (and Klipper has no `M300`). If you fit one: `[output_pin beeper] pin: EXP1_1`.
+
 ## Then start Klipper
 
 Confirm both MCUs load on the same `master` version — the command counts match, no `is not compatible` / `Unknown command` skew — and `state: ready` (query Moonraker `/printer/info`, not a log grep). Then move to [calibration]({{< relref "calibration" >}}).
