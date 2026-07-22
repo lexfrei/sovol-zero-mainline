@@ -7,7 +7,7 @@ weight: 1
 
 A reference description of the Sovol Zero as shipped, captured from the running machine — host filesystem, Klipper config, MCU runtime, git remotes. It exists to support the migration: knowing exactly what hardware and software is in play, and which pieces are vendor-specific versus stock.
 
-The Sovol Zero is a CoreXY printer, an industrialised derivative of the Voron 0, with a 150×150×150 mm build volume in a closed frame. It runs Klipper on a Linux host talking to multiple STM32 MCUs over CANbus.
+The Sovol Zero is a CoreXY printer, an industrialised derivative of the Voron 0, with a 150×150×150 mm build volume in a closed frame. It runs Klipper on a Linux host talking to multiple STM32 MCUs over CANbus. Internally Sovol calls it the "SV08 mini" — the vendor firmware package ships as `SV08mini_Update_Package-*.deb`, and it shares its CAN toolhead module with the SV08 Max — though it's sold only as the Sovol Zero.
 
 ## Compute and MCU topology
 
@@ -78,7 +78,7 @@ Two distinct probing systems, both on the toolhead MCU, both feeding `z_offset_c
 - **Contact (load/strain):** the vendor `z_offset_calibration` module uses a single load sensor under the bed to find nozzle-to-bed contact (`internal_endstop_offset: -0.20`). Both `non_contact_probe` and `contact_probe` point at the eddy sensor; the contact path is the vendor's tensometric Z-zero.
 - `Z` homes via `probe:z_virtual_endstop`; `safe_z_home` at `96, 76.2`.
 
-For migration: current upstream covers the eddy sensor natively — `probe_eddy_current` with `METHOD=scan/rapid_scan/tap`. The under-bed strain gauge does NOT map to upstream `load_cell`/`load_cell_probe`/`hx71x`: its interface is not an ADC stream but a plain GPIO endstop (PD9 tare pulse, PD10 contact trigger), driven by a community config recipe — and late production units do not populate the sensor at all (the mainboard header is a v1.0 leftover), so check for the physical sensor before planning around it. The vendor MCU adds custom commands (`ldc1612_setup_home`, `query_ldc1612_home_state`) that have no stock equivalent, so migrating requires reflashing the MCUs from upstream `src/` and rewriting these config sections.
+For migration: current upstream covers the eddy sensor natively — `probe_eddy_current` with `METHOD=scan/rapid_scan/tap`. The under-bed strain gauge does NOT map to upstream `load_cell`/`load_cell_probe`/`hx71x`: its interface is not an ADC stream but a plain GPIO endstop (PD9 tare pulse, PD10 contact trigger), driven by a community config recipe — and the sensor comes and goes by revision: v1.0 used it for Z-zero (the eddy read only the mesh), while v1.1 dropped it and moved Z-zero to eddy tap. The load-cell version shipped in production for a while, so it isn't only a v1.0 board leftover — but later units arrive with no sensor and no mounting holes, so check for the physical part before planning around it. The vendor MCU adds custom commands (`ldc1612_setup_home`, `query_ldc1612_home_state`) that have no stock equivalent, so migrating requires reflashing the MCUs from upstream `src/` and rewriting these config sections.
 
 ## Thermal
 
@@ -89,7 +89,7 @@ For migration: current upstream covers the eddy sensor natively — `probe_eddy_
 | Chamber (optional) | `hot_mcu:PA0` | EPCOS 100K | 70 °C | watermark |
 
 > [!WARNING]
-> **Check the hotend for its copper bushing.** Older hotend revisions came without it, and they still turn up — the listing shows a bushing the unit may not have. It's not subtle: without the bushing the heatbreak sits loose in the heatsink and visibly wobbles. And it matters thermally — the heatsink can't pull heat off the heatbreak, so the radiator does nothing, thermal paste doesn't save it, and you get heat creep and clogs. Sovol replaces an affected hotend for free. Shared Zero/SV08 Max toolhead, so it applies to both.
+> **Check the hotend for its copper bushing.** Older hotend revisions came without it, and they still turn up — the listing shows a bushing the unit may not have. It's not subtle: without the bushing the heatbreak sits loose in the heatsink and visibly wobbles. And it matters thermally — the heatsink can't pull heat off the heatbreak, so the radiator does nothing, thermal paste doesn't save it, and you get heat creep and clogs. To spot it: the current hotend is gold-coloured and has the insert, an older one is a plain tube. Sovol replaces an affected hotend for free — tell the seller it's the withdrawn older version. Shared Zero/SV08 Max toolhead, so it applies to both.
 
 Fans:
 
