@@ -49,7 +49,6 @@ Update `[mcu] canbus_uuid` / `[mcu extruder_mcu] canbus_uuid` to the new real UU
 
 - **Origin (0,0) is the front-left corner.** The Creality K1c — a common config donor — has it front-right, so a reused K1 config gives mirrored coordinates and a wrong-way mesh. Fix the axis directions rather than fighting the mesh.
 - **No dedicated toolhead-temp sensor.** For a rough head readout, read the F103 die itself: `[temperature_sensor Toolhead_Temp]` with `sensor_type: temperature_mcu` and `sensor_mcu: extruder_mcu`.
-- **Some units have the X and Y stepper connectors physically swapped.** If an axis runs the wrong way or the wrong motor turns, swap them in config rather than rewiring.
 - **The buzzer is unpopulated** though its circuit is on the board; the F103's active buzzer can't vary pitch (and Klipper has no `M300`). If you fit one: `[output_pin beeper] pin: EXP1_1`.
 
 ## Then start Klipper

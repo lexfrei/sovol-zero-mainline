@@ -41,11 +41,9 @@ The planetary reduction in the extruder is **plastic** — the brass sheen is gr
 - **Re-grease before the first run** with Molykote 30L / EM-50L. Lithium greases (Litol, Ciatim) darken and wet plastic poorly — don't use them.
 - **When it's worn, go steel.** Orbiter 2.0 / 2.5 hardened gears drop in. For the sun/drive gear specifically, one long-running report (three machines, weeks of 24/7) uses an "XHGMAK 0.5-module, 10–22 T, steel 45" gear bonded with Loctite 638 — it sits at ~0.02 mm clearance and won't hold torque unbonded.
 
-## Toolhead board in a heated chamber — the real ABS ceiling
+## Toolhead board caps the chamber temperature
 
-The toolhead MCU is a commercial STM32F103, rated to 85 °C ambient. In a closed heated chamber (ABS/PA, ~60–65 °C air) the head board climbs to 80–87 °C, Klipper raises the TMC2209 over-temp flag, and the F103 can drop off the CAN bus — so on the Zero the chamber temperature is capped by the head electronics, not the hotend. Some early heads have no heatsink at all.
-
-To run the chamber hotter: pull the toolhead cover (drops it ~10 °C), add a small copper heatsink on the MCU and driver, or fit the 6010-fan cooling duct. A higher-rated MCU board doesn't fix it — the same TMC2209 driver still overheats.
+The toolhead MCU is a commercial STM32F103, rated to 85 °C ambient. In a closed heated chamber (ABS/PA, ~60–65 °C air) the head board reaches 80–87 °C and can drop off the CAN bus, so on the Zero the practical chamber ceiling is set by the head electronics, not the hotend. If you need it hotter, people cool the head — pull the cover, add a small copper heatsink on the MCU and driver, or fit a 6010-fan duct; a higher-rated MCU board doesn't help, since the same TMC2209 driver still overheats.
 
 ## 48 V speed mod {#48-v-speed-mod}
 
